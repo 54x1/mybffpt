@@ -256,7 +256,7 @@
         <h2 class="text-2xl font-bold">🚀 Future Features</h2>
 
         <ul class="space-y-2">
-          <li>- Add local inmemory in browser PDF support </li>
+          <li>- Add local in memory in browser PDF support </li>
           <li>- Improve Wise Bank support</li>
           <li>- Improve interactive bubble map chart type</li>
           <li>- Improve select on page priority top </li>
