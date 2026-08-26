@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+old_bk
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Env files (may contain secrets/config, never commit)
+.env
+.env.*
+!.env.example
+.npmrc
+
+# Encrypted exports (user data, never commit)
+*.enc
+
+# Test output
+coverage
+playwright-report
+test-results
+playwright/.cache
+.frugal*
+
+# Vite cache
+.vite/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
