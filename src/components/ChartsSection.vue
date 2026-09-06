@@ -262,6 +262,12 @@
                           {{ period.label }}
                         </button>
                       </div>
+                      <label class="label cursor-pointer gap-1.5 px-1"
+                        title="Show a cumulative balance that carries forward across the rows shown below">
+                        <input type="checkbox" class="toggle toggle-xs" v-model="balanceTableShowRunning"
+                          aria-label="Show running balance column" />
+                        <span class="text-xs">Running balance</span>
+                      </label>
                       <span class="badge badge-outline">{{ balanceSheetTotals.count }} transactions</span>
                     </div>
                   </div>
@@ -274,6 +280,7 @@
                       <span role="columnheader">Income</span>
                       <span role="columnheader">Spending</span>
                       <span role="columnheader">Net</span>
+                      <span v-if="balanceTableShowRunning" role="columnheader">Running Balance</span>
                     </div>
                     <div v-for="row in balanceSheetRows" :key="row.key" role="row"
                       class="card bg-base-100 shadow-sm border border-base-300">
@@ -292,6 +299,13 @@
                           <span role="cell" class="text-error">Spending: ${{ row.spending.toLocaleString('en-US', {
                             minimumFractionDigits:
                             2, maximumFractionDigits: 2 }) }}</span>
+                        </div>
+                        <div v-if="balanceTableShowRunning" class="flex justify-between text-xs pt-1 border-t border-base-300">
+                          <span role="cell" class="text-base-content/60">Running balance</span>
+                          <span role="cell" class="font-semibold" :class="row.running >= 0 ? 'text-success' : 'text-error'">
+                            {{ row.running >= 0 ? '+' : '-' }}${{ Math.abs(row.running).toLocaleString('en-US', {
+                              minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -329,6 +343,7 @@
                           <th scope="col" class="text-right">Income</th>
                           <th scope="col" class="text-right">Spending</th>
                           <th scope="col" class="text-right">Net</th>
+                          <th v-if="balanceTableShowRunning" scope="col" class="text-right">Running Balance</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -343,9 +358,14 @@
                             {{ row.balance >= 0 ? '+' : '-' }}${{ Math.abs(row.balance).toLocaleString('en-US', {
                               minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                           </td>
+                          <td v-if="balanceTableShowRunning" class="text-right font-semibold"
+                            :class="row.running >= 0 ? 'text-success' : 'text-error'">
+                            {{ row.running >= 0 ? '+' : '-' }}${{ Math.abs(row.running).toLocaleString('en-US', {
+                              minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                          </td>
                         </tr>
                         <tr v-if="balanceSheetRows.length === 0">
-                          <td colspan="4" class="text-center text-base-content/60 py-8">
+                          <td :colspan="balanceTableShowRunning ? 5 : 4" class="text-center text-base-content/60 py-8">
                             No transactions match the current chart filters.
                           </td>
                         </tr>
@@ -358,6 +378,13 @@
                           <th class="text-right text-error">${{ balanceSheetTotals.spending.toLocaleString('en-US', {
                             minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</th>
                           <th class="text-right"
+                            :class="balanceSheetTotals.balance >= 0 ? 'text-success' : 'text-error'">
+                            {{ balanceSheetTotals.balance >= 0 ? '+' : '-' }}${{
+                              Math.abs(balanceSheetTotals.balance).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                            maximumFractionDigits: 2 }) }}
+                          </th>
+                          <th v-if="balanceTableShowRunning" class="text-right"
                             :class="balanceSheetTotals.balance >= 0 ? 'text-success' : 'text-error'">
                             {{ balanceSheetTotals.balance >= 0 ? '+' : '-' }}${{
                               Math.abs(balanceSheetTotals.balance).toLocaleString('en-US', {
@@ -708,6 +735,9 @@ const balanceTablePeriod = computed<BalanceTablePeriod>({
   },
 });
 
+// Optional column: cumulative balance carried forward across the rows currently shown
+const balanceTableShowRunning = ref(false);
+
 // Helper to check if a preset is currently selected
 function isSelectedPreset(preset: { label: string; start: string; end: string }) {
   return dateFilter.value.start === preset.start && dateFilter.value.end === preset.end;
@@ -863,6 +893,7 @@ type BalanceTableRow = {
   income: number;
   spending: number;
   balance: number;
+  running: number;
   count: number;
   order: number;
 };
@@ -896,6 +927,7 @@ function getBalanceBucket(dateValue: string | Date, period: BalanceTablePeriod):
       income: 0,
       spending: 0,
       balance: 0,
+      running: 0,
       count: 0,
       order: local.getTime(),
     };
@@ -914,6 +946,7 @@ function getBalanceBucket(dateValue: string | Date, period: BalanceTablePeriod):
       income: 0,
       spending: 0,
       balance: 0,
+      running: 0,
       count: 0,
       order: start.getTime(),
     };
@@ -927,6 +960,7 @@ function getBalanceBucket(dateValue: string | Date, period: BalanceTablePeriod):
       income: 0,
       spending: 0,
       balance: 0,
+      running: 0,
       count: 0,
       order: start.getTime(),
     };
@@ -941,6 +975,7 @@ function getBalanceBucket(dateValue: string | Date, period: BalanceTablePeriod):
       income: 0,
       spending: 0,
       balance: 0,
+      running: 0,
       count: 0,
       order: start.getTime(),
     };
@@ -954,6 +989,7 @@ function getBalanceBucket(dateValue: string | Date, period: BalanceTablePeriod):
       income: 0,
       spending: 0,
       balance: 0,
+      running: 0,
       count: 0,
       order: start.getTime(),
     };
@@ -966,6 +1002,7 @@ function getBalanceBucket(dateValue: string | Date, period: BalanceTablePeriod):
     income: 0,
     spending: 0,
     balance: 0,
+    running: 0,
     count: 0,
     order: start.getTime(),
   };
@@ -990,7 +1027,18 @@ const balanceSheetRows = computed(() => {
     buckets.set(existing.key, existing);
   }
 
-  return [...buckets.values()].sort((a, b) => a.order - b.order);
+  const rows = [...buckets.values()].sort((a, b) => a.order - b.order);
+
+  // Running balance accumulates each period's net on top of the previous one,
+  // starting from zero at the first row currently shown (i.e. cumulative within
+  // whatever date range/filters are active, not an absolute all-time balance).
+  let runningTotal = 0;
+  for (const row of rows) {
+    runningTotal += row.balance;
+    row.running = runningTotal;
+  }
+
+  return rows;
 });
 
 const balanceSheetTotals = computed(() => {

@@ -15,7 +15,10 @@
       Skip to main content
     </a>
     <!-- Global toasts / announcements -->
-    <div class="toast toast-top toast-end z-[70] pointer-events-none" aria-live="polite" aria-atomic="true">
+    <!-- z-[1050]: must stay above an open dropdown's elevated stacking context
+         (z-index: 1010, see the dropdown backdrop CSS below) so a toast is
+         never hidden behind an open menu. -->
+    <div class="toast toast-top toast-end z-[1050] pointer-events-none" aria-live="polite" aria-atomic="true">
       <div v-for="t in toasts" :key="t.id" class="alert pointer-events-auto" :class="{
         'alert-success': t.kind === 'success',
         'alert-info': t.kind === 'info',
@@ -114,6 +117,14 @@
       <span>⚠️ Secure storage is unavailable in this browser context. Your data is stored in
         <strong>plaintext</strong>. Use HTTPS or localhost to enable encryption.</span>
     </div>
+
+    <!-- Dropdown backdrop: invisible full-viewport layer shown whenever any
+         details.dropdown is open. Its z-index sits just under the open
+         dropdown's own (elevated) stacking context, so the open panel is
+         guaranteed to render in front of the rest of the page — see the
+         ===== Dropdown (details/summary) polish ===== CSS below. Clicking it
+         closes the dropdown via the existing outside-click handling. -->
+    <div v-if="anyDropdownOpen" class="dropdown-backdrop" aria-hidden="true" @click="closeAllDropdowns"></div>
 
     <!-- Header -->
     <AppHeader :tabs="tabs" :active-tab="activeTab" :net-balance-formatted="netBalanceFormatted"
@@ -1753,6 +1764,25 @@ function closeClosestDetails(e: Event) {
   el?.removeAttribute("open");
 }
 
+// Tracks whether ANY <details class="dropdown"> anywhere in the app is
+// currently open, so we can render a full-viewport backdrop behind it. The
+// backdrop's z-index sits just under the open dropdown's own (elevated, see
+// the CSS below), which guarantees the open panel always paints in front of
+// *everything* else on the page — other cards, the chart's external tooltip,
+// sticky headers, etc. — instead of depending on every element elsewhere in
+// the app keeping its own z-index below the dropdown's.
+const anyDropdownOpen = ref(false);
+function refreshAnyDropdownOpen() {
+  anyDropdownOpen.value = !!document.querySelector("details.dropdown[open]");
+}
+
+function closeAllDropdowns() {
+  document
+    .querySelectorAll<HTMLDetailsElement>("details.dropdown[open]")
+    .forEach((d) => d.removeAttribute("open"));
+  refreshAnyDropdownOpen();
+}
+
 function onDocClick(ev: MouseEvent) {
   // Close any open dropdown if click happens outside it
   const target = ev.target as Node;
@@ -1762,6 +1792,7 @@ function onDocClick(ev: MouseEvent) {
     .forEach((d) => {
       if (!d.contains(target)) d.removeAttribute("open");
     });
+  refreshAnyDropdownOpen();
 }
 
 function onDocKeydown(ev: KeyboardEvent) {
@@ -1769,16 +1800,27 @@ function onDocKeydown(ev: KeyboardEvent) {
   document
     .querySelectorAll<HTMLDetailsElement>("details[open]")
     .forEach((d) => d.removeAttribute("open"));
+  refreshAnyDropdownOpen();
+}
+
+// Native <details> "toggle" events don't reliably bubble across browsers, but
+// a capture-phase listener on the document still sees every one regardless —
+// this is what keeps the backdrop in sync when a dropdown is opened/closed by
+// clicking its own summary (as opposed to the outside-click/Esc paths above).
+function onAnyDetailsToggle() {
+  refreshAnyDropdownOpen();
 }
 
 onMounted(() => {
   document.addEventListener("click", onDocClick, true);
   document.addEventListener("keydown", onDocKeydown);
+  document.addEventListener("toggle", onAnyDetailsToggle, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", onDocClick, true);
   document.removeEventListener("keydown", onDocKeydown);
+  document.removeEventListener("toggle", onAnyDetailsToggle, true);
 });
 
 // ========== COMPUTED PROPERTIES ==========
@@ -4808,73 +4850,18 @@ function goHome() {
   top: 0.75rem;
 }
 
-/* ===== Dropdown (details/summary) polish ===== */
-details.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown>summary {
-  list-style: none;
-  cursor: pointer;
-}
-
-.dropdown>summary::-webkit-details-marker {
-  display: none;
-}
-
-.dropdown .dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  margin-top: 0.5rem;
-  z-index: 60;
-  max-height: 60vh;
-  overflow: auto;
-  overscroll-behavior: contain;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 30px oklch(var(--bc) / 0.15);
-  /* Smooth desktop dropdown animation */
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-/* Show only when <details> is actually open (so it toggles correctly). */
-details.dropdown[open]>.dropdown-content {
-  display: block;
-}
-
-/* Desktop dropdown open animation */
-@media screen and (min-width: 768px) {
-  header details.dropdown[open]>.dropdown-content {
-    animation: desktop-dropdown-fade-in 0.2s ease-out forwards;
-  }
-
-  @keyframes desktop-dropdown-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(-0.5rem) scale(0.95);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  /* Better desktop dropdown positioning - align with button edge */
-  header .dropdown .dropdown-content {
-    right: -0.25rem;
-    margin-top: 0.625rem;
-  }
-
-  /* Widen dropdowns on large screens for better readability */
-  @media screen and (min-width: 1280px) {
-    header .dropdown .dropdown-content {
-      min-width: 16rem;
-    }
-  }
-}
+/* ===== Dropdown (details/summary) polish =====
+   Moved to a dedicated UNSCOPED <style> block at the bottom of this file.
+   <details class="dropdown"> is rendered deep inside child components
+   (AppHeader, AddTransactionForm, BulkEditModal, TransactionsSection, ...),
+   and Vue's scoped CSS only auto-attaches this component's scope attribute
+   to elements App.vue's own template renders directly (plus the root
+   element of a child component invoked directly here, e.g. <header>) — it
+   does not reach further down into a child's own template. Rules here
+   never matched those deeper elements at all (confirmed empirically: a
+   scoped `details.dropdown[open] { z-index: 1010 }` rule computed as
+   z-index: auto on TransactionsSection's dropdowns), so anything that must
+   apply to every dropdown regardless of nesting depth has to be unscoped. */
 
 /* ===== Transaction table usability ===== */
 .table {
@@ -5026,6 +5013,7 @@ tbody tr.bg-base-200 {
 
 /* Sticky header with consistent height and reliable positioning */
 header.navbar.sticky {
+  z-index: 10000;
   /* Fixed height - balance widget overflows, doesn't push nav taller */
   min-height: 3.5rem;
   height: 3.5rem;
@@ -5147,35 +5135,9 @@ header.navbar.sticky {
   /* Dropdown wrapper positioning and touch-target sizing live in
      AppHeader.vue's own <style scoped>. */
 
-  /* Force dropdowns to open below on mobile, centered on the page when content overflows */
-  header details.dropdown[open]>.mobile-dropdown-content {
-    position: fixed !important;
-    top: calc(var(--header-height, 3.5rem) + 0.75rem) !important;
-    bottom: auto !important;
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) !important;
-    max-width: calc(100vw - 2rem) !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: block !important;
-    pointer-events: auto !important;
-    z-index: 70 !important;
-    animation: dropdown-fade-in 0.2s ease-out forwards;
-  }
-
-  /* Smooth dropdown open animation */
-  @keyframes dropdown-fade-in {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-0.5rem) scale(0.95);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0) scale(1);
-    }
-  }
+  /* Mobile dropdown positioning (header details.dropdown[open]>.mobile-dropdown-content)
+     moved to the unscoped <style> block at the bottom of this file — see the
+     note by "Dropdown (details/summary) polish" above for why. */
 
   /* Table row entrance animation */
   @keyframes table-row-fade-in {
@@ -5425,17 +5387,9 @@ header.navbar.sticky {
     /* Fallback */
   }
 
-  /* Fix dropdown height on mobile */
-  .dropdown .dropdown-content {
-    max-height: 70dvh;
-    max-height: 70vh;
-    /* Fallback */
-    /* Prevent dropdowns from overflowing viewport */
-    right: auto;
-    left: 0;
-    width: 90vw;
-    max-width: calc(100vw - 2rem);
-  }
+  /* Dropdown mobile height/width fix moved to the unscoped <style> block at
+     the bottom of this file — see the note by "Dropdown (details/summary)
+     polish" above for why. */
 
   /* Form inputs full width on mobile */
   .form-control {
@@ -5728,6 +5682,174 @@ h6 {
   .chart-type-join .btn {
     min-height: 2rem;
     padding: 0.25rem 0.4rem;
+  }
+}
+</style>
+
+<!--
+  This second <style> block is intentionally UNSCOPED (no "scoped"
+  attribute). <details class="dropdown"> is rendered deep inside several
+  different child components (AppHeader, AddTransactionForm, BulkEditModal,
+  TransactionsSection, ...). Vue's scoped CSS only auto-attaches this SFC's
+  scope attribute to elements App.vue's own template renders directly, plus
+  the root element of a child component invoked directly from here (e.g.
+  <header>, the root of <AppHeader>) — it does not reach further down into
+  a child component's own template. A scoped rule targeting the <details>
+  itself, or its .dropdown-content, therefore never matched for any
+  dropdown nested more than one component deep (confirmed empirically: with
+  the equivalent rule scoped, TransactionsSection's dropdowns computed
+  z-index: auto, not the 60/1010 the rule specified) — the panel had no
+  real z-index protection at all and could be covered by anything else on
+  the page that established its own stacking context. Unscoped, every
+  dropdown in the app gets the same treatment regardless of nesting depth.
+-->
+<style>
+/* ===== Dropdown (details/summary) polish ===== */
+details.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown>summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.dropdown>summary::-webkit-details-marker {
+  display: none;
+}
+
+.dropdown .dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  z-index: 60;
+  max-height: 60vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px oklch(var(--bc) / 0.15);
+  /* Smooth desktop dropdown animation */
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Show only when <details> is actually open (so it toggles correctly). */
+details.dropdown[open]>.dropdown-content {
+  display: block;
+}
+
+/* An open dropdown's z-index of 60 above only wins against its OWN
+   siblings — it does nothing to protect it from unrelated, higher-z-index
+   overlays elsewhere on the page (e.g. the chart's external tooltip at
+   z-[1000]), because a non-positioned/no-z-index details.dropdown never
+   creates its own stacking context, so its content's z-index is compared at
+   whatever ancestor level actually establishes one. Explicitly promoting the
+   <details> itself only while it's open raises that whole local stacking
+   context above every other overlay in the app except true modals, so the
+   open panel and its text are never covered by content painted elsewhere.
+   The paired .dropdown-backdrop (rendered by App.vue whenever any dropdown
+   is open) sits one level below this, guaranteeing full coverage of
+   whatever would otherwise show through. */
+details.dropdown[open] {
+  position: relative;
+  z-index: 1010;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1005;
+  background: transparent;
+  cursor: default;
+}
+
+/* Elevating details.dropdown[open] only helps if nothing between it and the
+   page root already caps its stacking context at a lower z-index. The sticky
+   <header> (z-50) is exactly such a cap — its own dropdowns (theme switcher,
+   hamburger menu) would otherwise stay stuck behind anything on the page with
+   z-index > 50, even after the rule above. When the header contains an open
+   dropdown, lift the header itself to the same ceiling so its content can
+   actually reach the front. */
+header:has(details.dropdown[open]) {
+  z-index: 1010;
+}
+
+/* Desktop dropdown open animation */
+@media screen and (min-width: 768px) {
+  header details.dropdown[open]>.dropdown-content {
+    animation: desktop-dropdown-fade-in 0.2s ease-out forwards;
+  }
+
+  @keyframes desktop-dropdown-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem) scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Better desktop dropdown positioning - align with button edge */
+  header .dropdown .dropdown-content {
+    right: -0.25rem;
+    margin-top: 0.625rem;
+  }
+
+  /* Widen dropdowns on large screens for better readability */
+  @media screen and (min-width: 1280px) {
+    header .dropdown .dropdown-content {
+      min-width: 16rem;
+    }
+  }
+}
+
+/* Force dropdowns to open below on mobile, centered on the page when content overflows */
+@media screen and (max-width: 767px) {
+  header details.dropdown[open]>.mobile-dropdown-content {
+    position: fixed !important;
+    top: calc(var(--header-height, 3.5rem) + 0.75rem) !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100vw - 2rem) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    pointer-events: auto !important;
+    z-index: 70 !important;
+    animation: dropdown-fade-in 0.2s ease-out forwards;
+  }
+
+  /* Smooth dropdown open animation */
+  @keyframes dropdown-fade-in {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-0.5rem) scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+  }
+}
+
+/* Fix dropdown height on mobile: prevent dropdowns from overflowing viewport */
+@media screen and (max-width: 768px) {
+  .dropdown .dropdown-content {
+    max-height: 70dvh;
+    max-height: 70vh;
+    /* Fallback */
+    right: auto;
+    left: 0;
+    width: 90vw;
+    max-width: calc(100vw - 2rem);
   }
 }
 </style>

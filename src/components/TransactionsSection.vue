@@ -66,7 +66,7 @@
           <summary class="btn btn-outline btn-xs" aria-haspopup="menu">
             💰 Select Income
           </summary>
-          <ul class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48" role="menu">
+          <ul class="dropdown-content left-0 menu p-2 shadow bg-base-100 rounded-box w-48" role="menu">
             <li>
               <button type="button" role="menuitem" @click="
                 $emit('select-by-type-and-close', 'income', 'page', $event);
@@ -88,7 +88,7 @@
           <summary class="btn btn-outline btn-xs" aria-haspopup="menu">
             💸 Select Spending
           </summary>
-          <ul class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48" role="menu">
+          <ul class="dropdown-content left-0 menu p-2 shadow bg-base-100 rounded-box w-48" role="menu">
             <li>
               <button type="button" role="menuitem" @click="
                 $emit('select-by-type-and-close', 'spending', 'page', $event)
@@ -109,7 +109,7 @@
           <summary class="btn btn-outline btn-xs" aria-haspopup="listbox">
             📈 Select Large
           </summary>
-          <div class="dropdown-content card card-compact p-2 bg-base-100 shadow w-72">
+          <div class="dropdown-content left-0 card card-compact p-2 bg-base-100 shadow w-72">
             <div class="card-body space-y-2">
               <div class="form-control">
                 <label class="label" for="thresh">
@@ -185,7 +185,7 @@
             <summary class="btn btn-outline btn-xs" aria-haspopup="menu">
               ✅ Select all ▾
             </summary>
-            <ul class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-56 z-10" role="menu">
+            <ul class="dropdown-content left-0 menu p-2 shadow bg-base-100 rounded-box w-56" role="menu">
               <li>
                 <button type="button" role="menuitem" @click="onSelectAll('page', $event)">
                   This page ({{ paginatedTransactions.length }})

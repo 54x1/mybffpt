@@ -195,13 +195,22 @@ onBeforeUnmount(() => {
 /* Lift the entire picker into its own top-most stacking context. A high z-index
    on the popover alone cannot escape sibling cards and positioned form fields. */
 .date-picker-open { z-index: 2147483646; }
-.date-picker-today {
+/* Each state is repeated for :hover / :focus-visible so DaisyUI's own
+   `.btn-ghost:hover` (which would swap in a low-contrast grey fill and leave
+   the primary-coloured text stranded on it) can't win — same fix pattern as
+   `.date-picker-popover:hover` below. Keeps the day cell legible on hover in
+   both themes (WCAG 1.4.3). */
+.date-picker-today,
+.date-picker-today:hover,
+.date-picker-today:focus-visible {
   font-weight: 700;
   color: oklch(var(--p));
   box-shadow: inset 0 0 0 2px oklch(var(--p));
-  background: oklch(var(--p) / .1);
+  background: oklch(var(--p) / .12);
 }
-.date-picker-today-selected {
+.date-picker-today-selected,
+.date-picker-today-selected:hover,
+.date-picker-today-selected:focus-visible {
   color: oklch(var(--pc));
   box-shadow:
     inset 0 0 0 2px oklch(var(--pc) / .9),
