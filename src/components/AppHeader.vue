@@ -173,6 +173,7 @@ function onThemeSelect(theme: string) {
 <style scoped>
 /* Sticky header with consistent height and reliable positioning */
 header.navbar.sticky {
+  z-index: 10000;
   /* Fixed height - balance widget overflows, doesn't push nav taller */
   min-height: 3.5rem;
   height: 3.5rem;

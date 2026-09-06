@@ -135,8 +135,19 @@
     border-color: oklch(var(--p) / 0.2);
   }
 
-  /* Chart type button active state */
-  .btn-active {
+  /* Active / current-selection button: chart-type toggle, the pagination
+     "Page x / y" pill, and the balance-sheet period tabs.
+     DaisyUI's own `.btn:hover` outranks a bare `.btn-active`, so on hover it
+     reverted just the background to a grey base tone while our `color: --pc`
+     stayed put — near-white-on-grey in the light theme, near-black-on-grey in
+     the dark theme, both well below WCAG AA (1.4.3). Pinning every interaction
+     state to the theme's guaranteed --p / --pc pair keeps the label legible;
+     hover feedback still comes from the shared `.btn:hover` lift above. */
+  .btn.btn-active,
+  .btn.btn-active:hover,
+  .btn.btn-active:focus,
+  .btn.btn-active:focus-visible,
+  .btn.btn-active:active {
     background-color: oklch(var(--p));
     color: oklch(var(--pc));
     border-color: oklch(var(--p));
