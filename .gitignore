@@ -43,3 +43,6 @@ playwright/.cache
 *.njsproj
 *.sln
 *.sw?
+
+# Generated SBOM (built in CI and uploaded as an artifact; regenerate with npm run sbom)
+sbom*.json

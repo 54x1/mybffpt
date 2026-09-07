@@ -1,0 +1,55 @@
+# mybffpt — myBudget Forecaster
+# Copyright (C) 2026 54x1
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This file is part of mybffpt, free software licensed under the GNU Affero
+# General Public License v3.0 or later. See the LICENSE file in the project
+# root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
+
+name: CodeQL
+
+# Static application security testing (SAST) on every change to the main
+# branches plus a weekly sweep so newly published query packs are applied to
+# unchanged code (SOC 2 CC7.1). Results appear under Security > Code scanning.
+# Code scanning is free for public repositories; the repository owner must
+# have it enabled under Settings > Code security and analysis.
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    - cron: '30 2 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'

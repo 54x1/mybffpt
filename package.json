@@ -23,6 +23,7 @@
     "license:notices": "node scripts/generate-third-party-notices.mjs",
     "license:notices:check": "node scripts/generate-third-party-notices.mjs --check",
     "security:audit": "npm audit --audit-level=high",
+    "sbom": "npm sbom --sbom-format cyclonedx --omit dev > sbom.cyclonedx.json",
     "verify": "npm run type-check && npm run unit && npm run license:check && npm run license:notices:check && npm run build && npm run security:audit && npm run a11y"
   },
   "keywords": [],

@@ -9,7 +9,11 @@
  * root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
  */
 
-// ===== Stay-unlocked ("session" mode) inactivity lock =====
+// ===== Inactivity lock (session-termination control) =====
+//
+// Runs whenever a password-protected store is unlocked in "off" or "session"
+// auto-unlock mode (App.vue wires it up). In "device" mode the user has
+// explicitly opted into persistent auto-unlock, so it is not applied there.
 //
 // A backgrounded tab is not the same as a closed one: mobile browsers commonly
 // suspend a tab (home button / app-switch) without tearing it down, so its

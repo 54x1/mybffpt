@@ -47,9 +47,18 @@ export const LS_KEYS = {
   lastHiddenAt: "financial-tracker-last-hidden-at",
 };
 
-// Stay-unlocked ("session" mode): how long the app may sit backgrounded or
-// idle before it's force-locked, requiring the password again.
+// Inactivity lock: how long an unlocked, password-protected store may sit
+// backgrounded or idle before it's force-locked, requiring the password again.
+// Applies in "off" and "session" auto-unlock modes (not "device", where the
+// user has explicitly opted into persistent auto-unlock). Session-termination
+// control; see docs/policies/ACCESS_CONTROL_POLICY.md.
 export const STAY_UNLOCKED_INACTIVITY_MS = 5 * 60 * 1000;
+
+// Minimum master-password length. NIST SP 800-63B requires at least 8
+// characters for user-chosen memorised secrets. The KDF (PBKDF2-SHA256,
+// 600,000 iterations) slows brute force but cannot rescue a 4-character
+// password.
+export const MIN_MASTER_PASSWORD_LENGTH = 8;
 
 export const dateFormatOptions: { value: DateFormatOption; label: string; example: string }[] = [
   { value: "dd/mm/yyyy", label: "DD/MM/YYYY", example: "25/12/2024" },

@@ -1,5 +1,15 @@
+# mybffpt — myBudget Forecaster
+# Copyright (C) 2026 54x1
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This file is part of mybffpt, free software licensed under the GNU Affero
+# General Public License v3.0 or later. See the LICENSE file in the project
+# root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
+
 version: 2
 updates:
+  # Application and tooling dependencies.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -9,10 +19,25 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      # Majors are grouped into a single PR so they stay reviewable without
+      # being ignored outright: a global ignore on semver-major would also
+      # suppress Dependabot security updates that need a major bump
+      # (SOC 2 CC7.1).
+      major:
+        update-types:
+          - "major"
     labels:
       - "dependencies"
     commit-message:
       prefix: "chore(deps)"
+
+  # GitHub Actions used by the CI, CodeQL and scheduled workflows (CC6.8 / CC9.2).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
