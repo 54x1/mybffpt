@@ -1,72 +1,115 @@
 # Security Policy
 
-mybffpt is a **client-side-only** application — there is no server, no account
-system, and no backend to compromise. Nearly all security-relevant behavior
-lives in the browser: how data is stored, how it's encrypted when shared, and
-what the page is allowed to load.
+mybffpt is a **client-side-only** application: there is no server, no account
+system, and no backend. Nearly all security-relevant behaviour lives in the
+browser: how data is stored, how it is encrypted when shared, and what the
+page is allowed to load. The formal policies behind this document are in
+[`docs/policies/`](docs/policies/); the SOC 2 control mapping is in
+[`docs/compliance/CONTROL_MATRIX.md`](docs/compliance/CONTROL_MATRIX.md).
 
-## Reporting a Vulnerability
+## Supported versions
 
-Please report suspected vulnerabilities using **[GitHub Security
-Advisories](https://github.com/54x1/mybffpt/security/advisories/new)** on this
-repository, rather than a public issue. This allows a fix to be prepared before
-details are disclosed publicly.
+| Version | Supported |
+|---|---|
+| Latest release on `main` | Yes |
+| Older releases | No; upgrade to the latest release |
 
-What counts as a security issue here:
+## Reporting a vulnerability
 
-- A way to bypass or weaken the encrypted share-code protection (AES-256-GCM)
-- A way to read another user's `localStorage` data cross-origin, or leak it
-  off-device without the user initiating a share/export
-- A Content-Security-Policy bypass (e.g. a way to execute injected script
-  despite the CSP below)
-- Any dependency vulnerability with a known exploit path reachable from this
-  app's actual usage of that dependency
+Report suspected vulnerabilities privately via **[GitHub Security
+Advisories](https://github.com/54x1/mybffpt/security/advisories/new)**, not a
+public issue, so a fix can be prepared before details are disclosed.
 
-General bugs, UI issues, or feature requests should go through regular
-[GitHub Issues](https://github.com/54x1/mybffpt/issues) instead.
+Include: affected version or commit, steps to reproduce, impact, and (if you
+have one) a suggested fix. Do not include real financial data.
 
-## Data Handling
+### Response targets
+
+| Stage | Target |
+|---|---|
+| Acknowledge receipt | 3 business days |
+| Triage and assign severity (CVSS v3.1) | 7 calendar days |
+| Fix released: Critical / High | 7 / 30 days from triage |
+| Fix released: Medium / Low | 90 days / next scheduled release |
+| Coordinated public disclosure | On release of the fix, or 90 days after report, whichever is first |
+
+Reporters are credited in the advisory and `CHANGELOG.md` unless they ask not
+to be. The full process is in
+[`docs/policies/INCIDENT_RESPONSE_PLAN.md`](docs/policies/INCIDENT_RESPONSE_PLAN.md).
+
+### In scope
+
+- Bypassing or weakening the encrypted share-code / export protection
+  (AES-256-GCM) or the encrypted-at-rest store
+- Reading another origin's `localStorage`, or leaking data off-device without
+  the user initiating a share or export
+- A Content-Security-Policy bypass (executing injected script despite the CSP)
+- A dependency vulnerability with an exploit path reachable from this app's
+  actual usage
+- Weaknesses in the CI/CD pipeline or release process that could let
+  unreviewed code ship
+
+### Out of scope
+
+General bugs, UI issues, or feature requests: use
+[GitHub Issues](https://github.com/54x1/mybffpt/issues). Attacks that require
+physical access to an unlocked device, or a compromised browser/extension, are
+documented risks (see `docs/compliance/RISK_REGISTER.md`), not vulnerabilities.
+
+## Data handling
 
 - All transaction data is stored in the browser's `localStorage`. Nothing is
-  transmitted to a server — there isn't one.
-- Users may optionally set a master password, which encrypts local data using
-  **PBKDF2-SHA256 at 600,000 iterations** to derive an AES-256-GCM key. 600k
-  iterations meets current OWASP guidance for PBKDF2-SHA256 password hashing.
-- Share codes / exported links use the same PBKDF2 → AES-256-GCM scheme
-  (`src/utils/secureStorage.ts`, `src/utils/share.ts`) when password-protected;
-  unprotected exports are plaintext by design (the user has explicitly chosen
-  not to encrypt).
+  transmitted to a server; there is none.
+- Users may optionally set a master password (**minimum 8 characters**), which
+  encrypts local data with AES-256-GCM using a key derived by
+  **PBKDF2-SHA256 at 600,000 iterations** (current OWASP guidance).
+- An unlocked, password-protected store **locks itself after 5 minutes of
+  inactivity** (idle or backgrounded) unless the user has explicitly chosen
+  "Stay unlocked on this device", which the UI describes as storing the key
+  in plaintext in the browser.
+- Share codes, share links, and exported files use the same PBKDF2 to
+  AES-256-GCM scheme (`src/utils/share.ts`, `src/utils/secureStorage.ts`)
+  when password-protected; unprotected exports are plaintext by design.
+- Share links carry the payload in the URL fragment, which browsers never
+  send to servers. Imports are size-capped and expiry-checked before parsing.
 
 ## Content Security Policy
 
-Both `index.html` and `index.dev.html` set:
+`index.html` sets, and `public/_headers` repeats as a response header:
 
 ```
 default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';
+img-src 'self' data:; object-src 'none'; base-uri 'self';
+frame-ancestors 'none'; form-action 'self'; frame-src 'none'
 ```
 
 `style-src` allows `'unsafe-inline'` because Tailwind/DaisyUI and Chart.js/D3
 inject inline styles at runtime for theming and chart rendering; there is no
-inline `<script>` allowance. This is a known, accepted trade-off — tightening
-it further would require moving all dynamic styling to CSS custom properties
-set via `style.setProperty`, which is not currently planned.
+inline `<script>` allowance. This is a known, accepted trade-off recorded in
+the risk register. `tests/csp.test.ts` fails CI if the meta tag and the header
+file drift apart or if `script-src` is ever loosened.
 
-## Transport Security (HSTS)
+## Transport security and response headers
 
-`Strict-Transport-Security` is a response header set by whatever serves the
-built static files in production (e.g. your static host or reverse proxy) — it
-cannot be meaningfully set by the Vite dev server, which serves over plain
-HTTP. If you deploy mybffpt, ensure your hosting layer sends
-`Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` (or
-your host's equivalent) over HTTPS.
+HTTPS is required: Web Crypto is only available in a secure context, and the
+app falls back to plaintext storage (with a visible warning) over plain HTTP.
+`Strict-Transport-Security`, `X-Frame-Options`, COOP/CORP and the other
+response headers are shipped in `public/_headers` (Netlify / Cloudflare Pages)
+and documented for other hosts in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+The dev server and `vite preview` send the same non-HSTS headers.
 
-## Dependency Security
+## Dependency and supply-chain security
 
-- `npm run security:audit` runs `npm audit --audit-level=high` and is part of
-  `npm run verify`.
-- Known overrides: `nanoid` is pinned to `>=3.3.18` in `package.json` to
-  resolve [GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8).
-  Future advisory fixes follow the same pattern: add a targeted `overrides`
-  entry rather than broadly bumping unrelated dependencies.
-- Dependency updates are automated via Dependabot (`.github/dependabot.yml`).
+- `npm ci --ignore-scripts` in CI installs exactly the lockfile with dependency
+  lifecycle scripts disabled.
+- `npm run security:audit` (`npm audit --audit-level=high`) runs on every push
+  and PR, and weekly on a schedule so new advisories against unchanged code
+  are caught (`.github/workflows/security-schedule.yml`).
+- CodeQL static analysis runs on every push/PR and weekly
+  (`.github/workflows/codeql.yml`).
+- A CycloneDX SBOM (`npm run sbom`) is produced and stored as a CI artifact.
+- Third-party licences are inventoried and checked against an allow-list
+  (`npm run license:notices:check`).
+- Dependabot tracks npm packages and GitHub Actions weekly. Advisory fixes use
+  a targeted `overrides` entry (e.g. `nanoid >=3.3.18` for
+  GHSA-2v37-7h3g-55p8) rather than broad bumps.

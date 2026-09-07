@@ -15,7 +15,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-const CHECK_EXTENSIONS = new Set(['.ts', '.vue', '.css', '.js', '.html']);
+const CHECK_EXTENSIONS = new Set(['.ts', '.vue', '.css', '.js', '.mjs', '.html', '.yml', '.yaml']);
 const IGNORE_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '.git', 'coverage', 'playwright-report', 'test-results']);
 const NEEDLE = 'SPDX-License-Identifier';
 

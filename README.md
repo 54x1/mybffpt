@@ -96,6 +96,15 @@ npm run test:e2e
 
 mybffpt targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md) for what's covered, known limitations, and how to report an issue.
 
+## 🛡️ Security & Compliance
+
+- **Security policy and vulnerability reporting:** [SECURITY.md](SECURITY.md)
+- **Privacy notice:** [PRIVACY.md](PRIVACY.md)
+- **SOC 2 readiness pack** (system description, control matrix, risk and vendor registers, evidence guide, audit record): [docs/compliance/](docs/compliance/)
+- **Policies** (information security, access control, change management, incident response, and more): [docs/policies/](docs/policies/)
+- **Deployment hardening** (HTTPS, HSTS, response headers): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+
 ## 🧾 Licence
 
 This program is free software, licensed under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later). See [LICENSE](LICENSE) for the full text. It comes with ABSOLUTELY NO WARRANTY.

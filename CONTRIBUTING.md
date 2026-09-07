@@ -10,11 +10,12 @@ Thanks for your interest in contributing to myBudget Forecaster! This is a small
    ```bash
    npm run verify
    ```
-4. Open a pull request against this repository describing what changed and why.
+4. Open a pull request against this repository using the template: describe what changed and why, fill in the security-impact section, and update the `[Unreleased]` section of [CHANGELOG.md](CHANGELOG.md).
+5. Wait for the `CI` and `CodeQL` checks to pass and for a Code Owner review. Every change, including the maintainer's own, goes through this path: see [docs/policies/CHANGE_MANAGEMENT_POLICY.md](docs/policies/CHANGE_MANAGEMENT_POLICY.md).
 
 ## Commit messages
 
-Use short, imperative-mood summaries (e.g. `Fix CSV parser for Up Bank exports`, not `Fixed` or `Fixes`). Reference the motivation in the body if it isn't obvious from the summary alone.
+Sign your commits if you can (`git commit -S`); signed commits are required on the protected branches. Use short, imperative-mood summaries (e.g. `Fix CSV parser for Up Bank exports`, not `Fixed` or `Fixes`). Reference the motivation in the body if it isn't obvious from the summary alone.
 
 ## Code style
 
@@ -29,6 +30,10 @@ Use short, imperative-mood summaries (e.g. `Fix CSV parser for Up Bank exports`,
 - Add or update **E2E tests** (Playwright, `npm run test:e2e`) for any user-facing flow change.
 - If your change touches a modal, form, or interactive component, run `npm run a11y` and confirm no new axe-core violations.
 - All contributed code must pass `npm run verify` before review.
+
+## Security-sensitive changes
+
+Changes to storage, encryption, share/import/export parsing, `index.html` (CSP), `vite.config.ts`, `public/_headers`, or anything under `.github/` get an explicit security read and must not weaken the parameters listed in [docs/policies/SECURE_DEVELOPMENT_POLICY.md](docs/policies/SECURE_DEVELOPMENT_POLICY.md). If you think you have found a vulnerability, do not open a pull request or issue: follow [SECURITY.md](SECURITY.md).
 
 ## Licensing of contributions
 

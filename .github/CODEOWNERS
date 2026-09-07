@@ -1,0 +1,29 @@
+# mybffpt — myBudget Forecaster
+# Copyright (C) 2026 54x1
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This file is part of mybffpt, free software licensed under the GNU Affero
+# General Public License v3.0 or later. See the LICENSE file in the project
+# root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
+
+# Code owners are automatically requested for review on every pull request.
+# Combined with the "Require review from Code Owners" branch-protection rule,
+# this enforces that no change reaches main or dev without maintainer review
+# (SOC 2 CC8.1). See docs/policies/CHANGE_MANAGEMENT_POLICY.md.
+
+*                                   @54x1
+
+# Security-sensitive paths: always reviewed by the maintainer.
+/src/utils/secureStorage.ts         @54x1
+/src/utils/share.ts                 @54x1
+/src/utils/storage.ts               @54x1
+/src/utils/inactivityLock.ts        @54x1
+/index.html                         @54x1
+/vite.config.ts                     @54x1
+/public/_headers                    @54x1
+/.github/                           @54x1
+/docs/policies/                     @54x1
+/docs/compliance/                   @54x1
+/SECURITY.md                        @54x1
+/PRIVACY.md                         @54x1

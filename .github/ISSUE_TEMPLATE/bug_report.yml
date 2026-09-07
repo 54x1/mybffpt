@@ -1,0 +1,49 @@
+# mybffpt — myBudget Forecaster
+# Copyright (C) 2026 54x1
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This file is part of mybffpt, free software licensed under the GNU Affero
+# General Public License v3.0 or later. See the LICENSE file in the project
+# root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
+
+name: Bug report
+description: Something is not working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste real bank data, share codes, or exported files into this issue.** Use anonymised or made-up transactions to reproduce the problem.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: e.g. Firefox 140 on Windows 11
+  - type: dropdown
+    id: protection
+    attributes:
+      label: Was password protection enabled?
+      options:
+        - "No"
+        - "Yes, auto-unlock off"
+        - "Yes, auto-unlock this session/tab"
+        - "Yes, auto-unlock this device"
+        - "Not sure"

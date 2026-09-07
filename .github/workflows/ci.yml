@@ -1,3 +1,12 @@
+# mybffpt — myBudget Forecaster
+# Copyright (C) 2026 54x1
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This file is part of mybffpt, free software licensed under the GNU Affero
+# General Public License v3.0 or later. See the LICENSE file in the project
+# root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
+
 name: CI
 
 on:
@@ -6,11 +15,23 @@ on:
   pull_request:
     branches: [main, dev]
 
+# Least-privilege token for every job (SOC 2 CC6.1 / CC6.3). Jobs that need
+# more must request it explicitly in their own permissions block.
+permissions:
+  contents: read
+
+# One run per ref at a time; superseded runs are cancelled.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Read Node version
         id: node-version
@@ -21,11 +42,34 @@ jobs:
           node-version: ${{ steps.node-version.outputs.version }}
           cache: 'npm'
 
+      # Lockfile-exact install with dependency lifecycle scripts disabled
+      # (supply-chain control, CC6.8). No dependency in this project needs an
+      # install/postinstall script; Playwright browsers are installed below.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # type-check, unit, license headers, third-party notices, build,
+      # npm audit (high+), axe-core accessibility scan
       - name: Run verification suite
         run: npm run verify
+
+      - name: Generate SBOM (CycloneDX, production dependencies)
+        run: npm run sbom
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx-${{ github.sha }}
+          path: sbom.cyclonedx.json
+          retention-days: 90
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: playwright-report
+          retention-days: 14

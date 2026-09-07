@@ -93,7 +93,8 @@
                   browser can read it.
                 </template>
                 <template v-else>
-                  You'll need to enter your password each time you open the app.
+                  You'll need to enter your password each time you open the app,
+                  and again after 5 minutes of inactivity.
                 </template>
               </p>
             </div>
@@ -329,6 +330,7 @@ import {
   INCOME_COLOR,
   SPENDING_COLOR,
   BALANCE_COLOR,
+  MIN_MASTER_PASSWORD_LENGTH,
 } from "./utils/constants";
 import { DEBUG_IMPORT, dbg, dbgw, dbge, dbgg, dbgge, sample } from "./utils/debug";
 import {
@@ -1391,16 +1393,22 @@ async function onStayUnlockedModeChange(mode: StayUnlockedMode) {
   }
 }
 
-// Keep the inactivity watch running exactly while "session" mode is active
-// and the store is unlocked; tearing it down otherwise (lock, mode change,
-// protection turned off) also clears its bookkeeping.
-watch([storeMode, stayUnlockedMode], ([mode, stayMode]) => {
-  if (mode === "ready" && stayMode === "session") {
-    startInactivityWatch(handleInactivityTimeout);
-  } else {
-    stopInactivityWatch();
+// Session-termination control: keep the inactivity watch running whenever a
+// password-protected store is unlocked, unless the user chose "device"
+// auto-unlock (an explicit opt-out of re-authentication). Covers both
+// "session" mode (bounded exposure if the tab never closes) and "off" mode
+// (an unlocked tab left open must not stay unlocked indefinitely). Tearing it
+// down (lock, mode change, protection turned off) also clears its bookkeeping.
+watch(
+  [storeMode, stayUnlockedMode, passwordProtectionEnabled],
+  ([mode, stayMode, protectedStore]) => {
+    if (mode === "ready" && protectedStore && stayMode !== "device") {
+      startInactivityWatch(handleInactivityTimeout);
+    } else {
+      stopInactivityWatch();
+    }
   }
-});
+);
 
 function handleInactivityTimeout() {
   clearSessionKey();
@@ -1433,8 +1441,8 @@ async function handleContinueWithoutPassword() {
 }
 
 async function handleSetMasterPassword() {
-  if (masterPassword.value.length < 4) {
-    storeError.value = "Password must be at least 4 characters";
+  if (masterPassword.value.length < MIN_MASTER_PASSWORD_LENGTH) {
+    storeError.value = `Password must be at least ${MIN_MASTER_PASSWORD_LENGTH} characters`;
     return;
   }
   if (masterPassword.value !== confirmMasterPassword.value) {
@@ -1523,8 +1531,8 @@ async function handleToggleProtection() {
 
 async function handleProtectionPromptSubmit(password: string) {
   protectionPromptOpen.value = false;
-  if (password.length < 4) {
-    pushToast("Password must be at least 4 characters", "error");
+  if (password.length < MIN_MASTER_PASSWORD_LENGTH) {
+    pushToast(`Password must be at least ${MIN_MASTER_PASSWORD_LENGTH} characters`, "error");
     return;
   }
   securityBusy.value = true;
