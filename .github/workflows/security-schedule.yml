@@ -51,7 +51,7 @@ jobs:
         run: npm run sbom
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-cyclonedx-scheduled-${{ github.run_id }}
           path: sbom.cyclonedx.json
