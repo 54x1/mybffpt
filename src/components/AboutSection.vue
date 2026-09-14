@@ -66,6 +66,9 @@
               (Persists until you turn it off. Stores your decryption key in
               plaintext in this browser.)
             </template>
+            <template v-else>
+              (Locks after 5 minutes of inactivity.)
+            </template>
           </template>
         </p>
 

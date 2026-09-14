@@ -1,0 +1,58 @@
+# mybffpt — myBudget Forecaster
+# Copyright (C) 2026 54x1
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This file is part of mybffpt, free software licensed under the GNU Affero
+# General Public License v3.0 or later. See the LICENSE file in the project
+# root, or <https://www.gnu.org/licenses/agpl-3.0.html>, for details.
+
+name: Scheduled security checks
+
+# Runs weekly (and on demand) so a vulnerability published against an
+# unchanged dependency tree is still detected within a week, not only on the
+# next push (SOC 2 CC7.1). Failures notify the maintainer via GitHub Actions.
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Read Node version
+        id: node-version
+        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node-version.outputs.version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Audit dependencies (high and critical)
+        run: npm run security:audit
+
+      - name: Verify third-party notices and license allow-list
+        run: npm run license:notices:check
+
+      - name: Generate SBOM (CycloneDX, production dependencies)
+        run: npm run sbom
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx-scheduled-${{ github.run_id }}
+          path: sbom.cyclonedx.json
+          retention-days: 90
