@@ -54,3 +54,6 @@ sbom*.json
 
 tests/pdfdiag-*.txt
 pdfdiag-*.txt
+
+# Generated OCR runtime assets (scripts/copy-ocr-assets.mjs, postinstall)
+public/ocr/

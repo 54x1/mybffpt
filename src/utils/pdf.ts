@@ -57,15 +57,27 @@ type GetDocumentLike = (params: {
 
 interface PdfDocumentLike {
   numPages: number;
-  getPage(n: number): Promise<{ getTextContent(): Promise<{ items: unknown[] }> }>;
+  getPage(n: number): Promise<{
+    getTextContent(): Promise<{ items: unknown[] }>;
+    getOperatorList(): Promise<{ fnArray: ArrayLike<number> }>;
+  }>;
   /** pdfjs v6: documents release resources via `cleanup()` — `destroy()` was
    * removed from PDFDocumentProxy and exists only on the loading task. */
   cleanup?(): Promise<unknown>;
 }
 
-let pdfjsPromise: Promise<{ getDocument: GetDocumentLike }> | null = null;
+interface PdfJsModule {
+  getDocument: GetDocumentLike;
+  /** Operator-id constants (paintImageXObject etc.) exported by pdf.js. */
+  OPS: Record<string, number>;
+}
 
-async function getPdfjs(): Promise<{ getDocument: GetDocumentLike }> {
+let pdfjsPromise: Promise<PdfJsModule> | null = null;
+
+/** Lazily import pdf.js and wire its same-origin worker (CSP 'self').
+ * Exported so the OCR renderer (pdfOcr.ts) shares the exact same configured
+ * module instance instead of depending on call order. */
+export async function getPdfjs(): Promise<PdfJsModule> {
   if (!pdfjsPromise) {
     pdfjsPromise = (async () => {
       const pdfjs = await import("pdfjs-dist");
@@ -80,7 +92,7 @@ async function getPdfjs(): Promise<{ getDocument: GetDocumentLike }> {
       } catch {
         // Fall back to pdf.js main-thread ("fake worker") mode.
       }
-      return pdfjs as unknown as { getDocument: GetDocumentLike };
+      return pdfjs as unknown as PdfJsModule;
     })();
   }
   return pdfjsPromise;
@@ -102,6 +114,59 @@ function isWrongPassword(err: unknown): boolean {
     e?.name === "PasswordException" &&
     (code.includes("INCORRECT") || code === "2")
   );
+}
+
+/**
+ * Heuristic: is this document drawn as pictures rather than selectable text?
+ * Two flavours seen in the wild, both invisible to `getTextContent`:
+ *  - scanned / rasterized pages (whole-page images);
+ *  - driver-rasterized Type3-style glyphs — ANZ print-to-PDF draws EVERY
+ *    character as a tiny 1-bit image mask (~1.5k paintImageMaskXObject ops
+ *    per page, no ToUnicode map), verified on a real ANZ statement.
+ * Counts image-paint operators in the first few pages' operator lists. Only
+ * worth calling when text extraction found nothing useful — it re-parses
+ * content streams.
+ */
+export async function isImageBasedPdf(
+  bytes: Uint8Array,
+  password?: string,
+): Promise<boolean> {
+  const pdfjs = await getPdfjs();
+  const task = pdfjs.getDocument({
+    data: bytes.slice(),
+    ...(password ? { password } : {}),
+  });
+  let doc: PdfDocumentLike;
+  try {
+    doc = await task.promise;
+  } catch (err) {
+    await task.destroy().catch(() => {});
+    throw err;
+  }
+  try {
+    const { paintImageXObject, paintJpegXObject, paintImageXObjectRepeat, paintImageMaskXObject, paintImageMaskXObjectGroup, paintImageMaskXObjectRepeat } = pdfjs.OPS;
+    const imageFns = new Set([
+      paintImageXObject,
+      paintJpegXObject,
+      paintImageXObjectRepeat,
+      paintImageMaskXObject,
+      paintImageMaskXObjectGroup,
+      paintImageMaskXObjectRepeat,
+    ]);
+    let imageOps = 0;
+    for (let n = 1; n <= Math.min(doc.numPages, 3) && imageOps < 8; n++) {
+      const page = await doc.getPage(n);
+      const ops = await page.getOperatorList();
+      for (let i = 0; i < ops.fnArray.length; i++) {
+        if (imageFns.has(ops.fnArray[i])) imageOps++;
+      }
+    }
+    // ≥8 image paints on a statement page can't be a logo/watermark — text
+    // statements carry at most a handful of decorative images.
+    return imageOps >= 8;
+  } finally {
+    await task.destroy().catch(() => {});
+  }
 }
 
 /**

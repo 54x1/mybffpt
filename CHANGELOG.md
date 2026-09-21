@@ -20,6 +20,13 @@ All notable changes to this project are documented here. The format follows
 - `vite preview` now serves the same security headers as the dev server.
 
 ### Added
+- In-browser OCR for image-based (scanned) PDF bank statements: when a PDF has
+  no selectable text, the app offers to rasterize each page and recognize it
+  locally with tesseract.js, then feeds the reconstructed layout into the
+  existing column mapper. Fully client-side — runtime assets are self-hosted
+  from `public/ocr` (no CDN), so nothing leaves the device and the CSP is
+  unchanged. Assets are copied by `scripts/copy-ocr-assets.mjs` (postinstall,
+  plus an explicit CI step for `--ignore-scripts` installs).
 - SOC 2 readiness pack under `docs/compliance/` (system description, control
   matrix, risk register, vendor register, data classification, evidence guide,
   audit record) and written policies under `docs/policies/`.

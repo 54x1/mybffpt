@@ -359,7 +359,8 @@ import {
   escapeRegExp,
 } from "./utils/text";
 import { safeLocalStorageGet, safeLocalStorageSet } from "./utils/storage";
-import { extractPdfPages, PdfPasswordNeededError, PdfWrongPasswordError, type PdfPageLayout } from "./utils/pdf";
+import { extractPdfPages, isImageBasedPdf, PdfPasswordNeededError, PdfWrongPasswordError, type PdfPageLayout } from "./utils/pdf";
+import { ocrPdfPages, type OcrProgress } from "./utils/pdfOcr";
 import {
   pdfPagesToStatement,
   detectPdfColumns,
@@ -3966,6 +3967,42 @@ function onPdfMapClose() {
   resolve?.(null);
 }
 
+// Runs local OCR on an image-based PDF and returns layout lines for the
+// column mapper, or null when the user should stop (failure / empty scan —
+// a toast has already been shown). Progress is reported through importStatus.
+async function runOcrRescue(
+  bytes: Uint8Array,
+  password: string | undefined,
+  filename: string,
+): Promise<PdfPageLayout[] | null> {
+  try {
+    const pages = await ocrPdfPages(bytes, password, (p: OcrProgress) => {
+      importStatus.value = p.page === 0
+        ? `OCR ${filename}: ${p.status}…`
+        : `OCR ${filename}: page ${p.page}/${p.pages} — ${p.status}…`;
+    });
+    importStatus.value = "";
+    const totalLines = pages.reduce((n, pg) => n + pg.lines.length, 0);
+    if (totalLines === 0) {
+      pushToast(
+        `OCR found no readable text in ${filename} — export a CSV statement instead`,
+        "warning",
+      );
+      return null;
+    }
+    pushToast(`OCR read ${filename}: ${totalLines} lines — confirm the columns`, "info");
+    return pages;
+  } catch (err) {
+    importStatus.value = "";
+    devError("OCR failed:", err);
+    pushToast(
+      `OCR failed for ${filename}${err instanceof Error ? `: ${err.message}` : ""} — export a CSV statement instead`,
+      "error",
+    );
+    return null;
+  }
+}
+
 // Extracts + parses a PDF statement and pushes the result into the import
 // queue (same label-modal flow as CSV). Encrypted documents loop through the
 // shared password prompt until unlocked or cancelled. After extraction the
@@ -3975,19 +4012,46 @@ async function importPdfFile(bytes: Uint8Array, filename: string) {
   let password: string | undefined;
   for (;;) {
     try {
-      const pages = await extractPdfPages(bytes, password);
+      let pages = await extractPdfPages(bytes, password);
       pendingPdfFile.value = null;
       const fallbackLabel = filename.replace(/\.[^.]+$/, "");
       const hint = yearHintFromFilename(filename);
 
       // Geometry + a reference auto-parse (for the pre-select suggestion).
-      const detection = detectPdfColumns(pages, hint);
+      let detection = detectPdfColumns(pages, hint);
       if (detection.rowCount === 0) {
-        pushToast(
-          `No transactions found in ${filename} — try exporting a CSV statement instead`,
-          "warning",
+        // Distinguish "no text layer at all" (rasterized/scanned PDF — ANZ
+        // print-to-PDF draws every glyph as a tiny image tile) from a text
+        // layout the parser simply failed to recognise.
+        let scanned = false;
+        try {
+          scanned = await isImageBasedPdf(bytes, password);
+        } catch {
+          /* detection is best-effort; fall through to the generic message */
+        }
+        if (!scanned) {
+          pushToast(
+            `No transactions found in ${filename} — try exporting a CSV statement instead`,
+            "warning",
+          );
+          return;
+        }
+        // Image-based (scanned / rasterized-glyph) PDF: offer local OCR.
+        const proceed = confirm(
+          `${filename} is an image-based (scanned) PDF with no selectable text.\n\n` +
+            `Run in-browser OCR to read it? This stays entirely on your device ` +
+            `but can take ~10-30s per page. For best results, export a CSV ` +
+            `statement from your bank instead.\n\n` +
+            `Select OK to run OCR, or Cancel to skip this file.`,
         );
-        return;
+        if (!proceed) {
+          pushToast(`Skipped ${filename} — image-based PDF (OCR declined)`, "warning");
+          return;
+        }
+        const ocrPages = await runOcrRescue(bytes, password, filename);
+        if (!ocrPages) return; // failed / produced nothing — toast already shown
+        pages = ocrPages;
+        detection = detectPdfColumns(pages, hint);
       }
       const auto = pdfPagesToStatement(pages, hint);
 
