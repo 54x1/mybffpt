@@ -294,6 +294,18 @@
     }
   }
 
+  /* Toast stack: clear the sticky navbar. The header paints an opaque bar
+     across the top (z-index 10000, AppHeader.vue) and its balance badge
+     hangs ~1rem below it; daisyUI's default toast offset is only .75rem
+     from the top edge, which buried every notification underneath the nav.
+     Push the stack below both — --header-height is declared on <header>,
+     not inherited here, so the 3.5rem fallback (the header's fixed height)
+     applies; App.vue keeps the container's z-index above the header/modal
+     ceiling so nothing can cover a toast. */
+  .toast.toast-top {
+    inset-block-start: calc(3.5rem + 1.25rem);
+  }
+
   /* Mobile optimizations */
   @media (max-width: 768px) {
     .chart-container {

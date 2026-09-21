@@ -10,6 +10,7 @@
  */
 
 import type { ChartGroupBy } from "../utils/chartBuckets";
+import type { RecurringFrequency } from "./types";
 
 // ========== DATE UTILITIES ==========
 
@@ -116,6 +117,51 @@ export function parseDateGuess(s: string | undefined | null): string {
 
 export function endOfMonthISO(y: number, m1to12: number) {
   return toLocalISO(new Date(y, m1to12, 0));
+}
+
+/** Add days to a YYYY-MM-DD date without UTC shifting (local-time math). */
+export function addDaysIso(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  return toLocalISO(dt);
+}
+
+/** Add months to a YYYY-MM-DD date, clamping the day (Jan 31 + 1 → Feb 28). */
+export function addMonthsClampedIso(iso: string, months: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const target = new Date(dt.getFullYear(), dt.getMonth() + months, 1);
+  const last = new Date(
+    target.getFullYear(),
+    target.getMonth() + 1,
+    0
+  ).getDate();
+  target.setDate(Math.min(d, last));
+  return toLocalISO(target);
+}
+
+/** Step an ISO date forward by `steps` × a recurring frequency. */
+export function advanceFrequency(
+  startISO: string,
+  freq: RecurringFrequency,
+  steps: number
+): string {
+  if (!startISO || steps === 0) return startISO;
+  switch (freq) {
+    case "daily":
+      return addDaysIso(startISO, steps);
+    case "weekly":
+      return addDaysIso(startISO, steps * 7);
+    case "fortnightly":
+      return addDaysIso(startISO, steps * 14);
+    case "monthly":
+      return addMonthsClampedIso(startISO, steps);
+    case "quarterly":
+      return addMonthsClampedIso(startISO, steps * 3);
+    case "yearly":
+      return addMonthsClampedIso(startISO, steps * 12);
+  }
+  return startISO;
 }
 
 export function toISOorEmpty(s: string) {

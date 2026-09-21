@@ -28,6 +28,11 @@ coverage
 playwright-report
 test-results
 playwright/.cache
+
+# PDF diagnostic harness output — contains real bank-statement transactions,
+# never commit (the tests/pdfdiag.test.ts harness itself is safe to keep).
+pdfdiag-out.txt
+tests/pdfdiag-report.txt
 .frugal*
 
 # Vite cache
@@ -46,3 +51,6 @@ playwright/.cache
 
 # Generated SBOM (built in CI and uploaded as an artifact; regenerate with npm run sbom)
 sbom*.json
+
+tests/pdfdiag-*.txt
+pdfdiag-*.txt

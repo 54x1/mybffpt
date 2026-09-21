@@ -631,8 +631,150 @@
                 </div>
               </div>
 
-              <!-- Apply to similar transactions (edit mode only) -->
-              <div v-if="currentlyEditingId && similarCount > 0"
+              <!-- Split amount into parts -->
+              <div v-if="!newTransaction.recurring" class="form-control md:col-span-2 lg:col-span-3">
+                <button type="button"
+                  class="btn btn-ghost btn-sm w-full justify-between normal-case font-medium hover:border-primary"
+                  :aria-expanded="splitOpen" @click="toggleSplit">
+                  <span class="flex items-center gap-2">✂️ Split amount into parts</span>
+                  <span class="flex items-center gap-2">
+                    <span v-if="splitActive" class="badge badge-sm"
+                      :class="splitBalanced ? 'badge-success' : 'badge-warning'">
+                      {{ splitRows.length }} parts · ${{ (splitTotalCents / 100).toFixed(2) }}
+                      <template v-if="splitStagger"> · {{ splitFreq }}</template>
+                    </span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200"
+                      :class="{ 'rotate-180': splitOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </button>
+
+                <div v-if="splitOpen" class="mt-2 border border-base-300 rounded-lg overflow-hidden">
+                  <div
+                    class="flex items-center justify-between gap-2 px-3 py-2 bg-base-200 border-b border-base-300 text-xs flex-wrap">
+                    <span>Parts must add up to <strong>${{ (amountCents / 100).toFixed(2) }}</strong></span>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <span>Split evenly into</span>
+                      <input v-model.number="splitCount" type="number" min="2" max="12" inputmode="numeric"
+                        class="input input-bordered input-xs w-16 text-center" aria-label="Number of even parts"
+                        @change="applyEvenSplit(splitCount)" />
+                      <button type="button" class="btn btn-ghost btn-xs" @click="applyEvenSplit(splitCount)">
+                        Redistribute
+                      </button>
+                    </label>
+                  </div>
+
+                  <!-- Part-pay style schedule: each part lands one interval later -->
+                  <div
+                    class="flex items-center gap-3 px-3 py-2 border-b border-base-300 text-xs flex-wrap bg-base-100">
+                    <label class="flex items-center gap-1.5 cursor-pointer font-medium">
+                      <input v-model="splitStagger" type="checkbox" class="checkbox checkbox-xs"
+                        aria-label="Stagger parts like a part-pay repayment schedule" />
+                      Part-pay schedule
+                    </label>
+                    <template v-if="splitStagger">
+                      <span class="opacity-60">every</span>
+                      <select v-model="splitFreq" class="select select-bordered select-xs w-auto"
+                        aria-label="Interval between repayments">
+                        <option value="weekly">Weekly</option>
+                        <option value="fortnightly">Fortnightly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                      </select>
+                      <span class="opacity-60" v-if="splitSchedulePreview">{{ splitSchedulePreview }}</span>
+                    </template>
+                  </div>
+
+                  <!-- Repayment window: move the whole plan (start) or re-plan its tail (end) -->
+                  <div v-if="splitStagger || splitLoadedFromGroup"
+                    class="flex items-center gap-4 px-3 py-2 border-b border-base-300 text-xs flex-wrap bg-base-100">
+                    <label class="flex items-center gap-2 font-medium">
+                      <span class="opacity-70">Start</span>
+                      <div class="w-40">
+                        <DatePicker v-model="splitPlanStart" id="splitPlanStartDate"
+                          aria-label="First repayment date" />
+                      </div>
+                    </label>
+                    <label class="flex items-center gap-2 font-medium">
+                      <span class="opacity-70">End</span>
+                      <div class="w-40">
+                        <DatePicker v-model="splitPlanEnd" id="splitPlanEndDate" :min="splitEndMin"
+                          aria-label="Last repayment date" />
+                      </div>
+                    </label>
+                    <span v-if="splitStagger" class="opacity-60">Start moves the whole plan · End adds or removes repayments</span>
+                  </div>
+
+                  <ul class="divide-y divide-base-300">
+                    <li v-for="(row, i) in splitRows" :key="i" class="px-3 py-2 space-y-1.5">
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs opacity-50 w-4 shrink-0" aria-hidden="true">{{ i + 1 }}</span>
+                        <div class="join shrink-0">
+                          <span class="join-item btn btn-sm btn-disabled" aria-hidden="true">$</span>
+                          <input v-model.number="row.amount" type="number" step="0.01" min="0"
+                            class="input input-bordered input-sm join-item w-28" inputmode="decimal"
+                            :aria-label="`Split part ${i + 1} amount`" />
+                        </div>
+                        <select v-model="row.category"
+                          class="select select-bordered select-sm flex-1 capitalize min-w-0"
+                          :aria-label="`Split part ${i + 1} category`">
+                          <option value="" disabled>Choose a category…</option>
+                          <option v-for="cat in allCategories" :key="cat" :value="cat">{{ cat }}</option>
+                        </select>
+                        <span v-if="splitStagger || splitLoadedFromGroup"
+                          class="text-xs opacity-60 shrink-0 w-20 text-right tabular-nums"
+                          :title="`Part ${i + 1} of ${splitRows.length} saved together`">
+                          {{ formatDate(rowDates[i]) || "—" }}
+                        </span>
+                        <button type="button" class="btn btn-ghost btn-xs text-error shrink-0"
+                          :disabled="splitRows.length <= 2" @click="removeSplitRow(i)"
+                          :aria-label="`Remove split part ${i + 1}`">✕</button>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <div class="flex items-center justify-between gap-2 px-3 py-2 border-t border-base-300">
+                    <button type="button" class="btn btn-ghost btn-xs gap-1" @click="addSplitRow">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add part
+                    </button>
+                    <span class="text-xs font-medium" :class="splitBalanced ? 'text-success' : 'text-warning'"
+                      aria-live="polite">
+                      <template v-if="splitBalanced">✓ Matches total</template>
+                      <template v-else-if="splitRows.length < splitMinRows">
+                        Add at least {{ splitMinRows }} parts
+                      </template>
+                      <template v-else-if="splitRemainderCents > 0">
+                        ${{ (splitRemainderCents / 100).toFixed(2) }} left to allocate
+                      </template>
+                      <template v-else>Over by ${{ (-splitRemainderCents / 100).toFixed(2) }}</template>
+                    </span>
+                  </div>
+                </div>
+
+                <p v-if="splitErrorLocal" class="text-xs text-error mt-1" role="alert">{{ splitErrorLocal }}</p>
+                <p v-else-if="splitOpen && splitLoadedFromGroup" class="text-xs opacity-60 mt-1">
+                  These parts were saved together — edits update all of them. Changing the date moves
+                  the whole plan.
+                </p>
+                <p v-else-if="splitOpen && splitStagger" class="text-xs opacity-60 mt-1">
+                  Part-pay style: {{ splitRows.length }} repayments, one every
+                  {{ splitFreqNoun }}, each keeping the type and description.
+                </p>
+                <p v-else-if="splitOpen" class="text-xs opacity-60 mt-1">
+                  Saving creates one transaction per part, each keeping the date, type and description.
+                  Other transactions with this description are not touched.
+                </p>
+              </div>
+
+              <!-- Apply to similar transactions (edit mode only). Hidden while a split is
+                   active: saving then writes the split parts instead, so these picks
+                   would be silently ignored — showing them here is just confusing. -->
+              <div v-if="currentlyEditingId && similarCount > 0 && !splitActive"
                 class="form-control md:col-span-2">
                 <button type="button"
                   class="btn btn-ghost btn-sm w-full justify-between normal-case font-medium hover:border-primary"
@@ -681,7 +823,8 @@
                 </div>
 
                 <p v-if="applyToSimilarIds.size > 0" class="text-xs mt-1 opacity-70">
-                  {{ applyToSimilarIds.size }} of {{ similarCount }} selected
+                  On save: category, tags &amp; amount are applied to {{ applyToSimilarIds.size }} of
+                  {{ similarCount }} matching transactions. Dates and descriptions stay as they are.
                 </p>
               </div>
 
@@ -706,9 +849,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import DatePicker from "./DatePicker.vue";
-import type { Transaction } from "../utils/types";
+import type { RecurringFrequency, Transaction } from "../utils/types";
+import { addDaysIso, advanceFrequency, todayLocalISO } from "../utils/dates";
 import { norm, eqi, sortAlpha, dedupeCI } from "../utils/text";
 import { useToasts } from "../composables/useToasts";
 import { useDateFormat } from "../composables/useDateFormat";
@@ -732,10 +876,324 @@ const props = defineProps<{
   isHiddenCategory: (name: string) => boolean;
   getCategoryUsageCount: (name: string) => number;
   similarTransactions: Transaction[];
+  /** All members of the edited transaction's split group (incl. itself). */
+  splitGroup: Transaction[];
 }>();
 
 const similarCount = computed(() => props.similarTransactions.length);
 const showSimilarPicker = ref(false);
+
+// ---------- Split amount into parts ----------
+type SplitRow = {
+  amount: number;
+  category: string;
+  /** Transaction id when this row was loaded from a saved split group. */
+  id?: string;
+  /** Saved ISO date when loaded from a saved split (non-staggered display). */
+  date?: string;
+};
+
+/** Validated part handed to the parent; `date` is the part's own ISO date. */
+type SplitPart = SplitRow & { id?: string; date: string };
+
+const splitOpen = ref(false);
+const splitRows = ref<SplitRow[]>([]);
+const splitErrorLocal = ref("");
+/** How many even parts the user wants — drives the Redistribute button. */
+const splitCount = ref(4);
+/**
+ * Part-pay mode: instead of every part landing on the form's date, each part
+ * is one interval later than the previous one (repayments every fortnight,
+ * like a BNPL/part-pay plan). Defaults to fortnightly.
+ */
+const splitStagger = ref(true);
+const splitFreq = ref<Exclude<RecurringFrequency, "daily" | "yearly">>("fortnightly");
+
+/** Whole cents of the form's current amount — avoids float drift in checks. */
+const amountCents = computed(() =>
+  Math.round(Math.max(0, Number(props.newTransaction.amount) || 0) * 100)
+);
+const splitTotalCents = computed(() =>
+  splitRows.value.reduce((sum, r) => sum + Math.round(Number(r.amount) * 100 || 0), 0)
+);
+const splitRemainderCents = computed(() => amountCents.value - splitTotalCents.value);
+/**
+ * Minimum parts allowed: a freshly created split needs ≥4 (Afterpay-style),
+ * but an existing saved plan being edited may legitimately have fewer.
+ */
+const splitMinRows = computed(() => (splitLoadedFromGroup.value ? 2 : 4));
+const splitBalanced = computed(
+  () => splitRows.value.length >= splitMinRows.value && splitRemainderCents.value === 0
+);
+/** Split is only in play while the panel is open with ≥2 rows. */
+const splitActive = computed(() => splitOpen.value && splitRows.value.length >= 2);
+/** Schedule start when editing a saved group (may differ from form date). */
+const splitAnchor = ref("");
+/** True while rows mirror a saved split group loaded for editing. */
+const splitLoadedFromGroup = ref(false);
+/** The date each part will be saved on, staggered when part-pay mode is on. */
+const rowDates = computed<string[]>(() =>
+  splitRows.value.map((r, i) => {
+    if (splitStagger.value) {
+      const anchor = splitAnchor.value || newTxDateISO.value || todayLocalISO();
+      return advanceFrequency(anchor, splitFreq.value, i);
+    }
+    // Not staggered: a loaded part keeps its saved date, others use the form.
+    return r.date || newTxDateISO.value;
+  })
+);
+/** "3 Sep – 24 Sep" style summary of the repayment window. */
+const splitSchedulePreview = computed(() => {
+  const dates = rowDates.value;
+  if (dates.length < 2) return "";
+  const first = formatDate(dates[0]);
+  const last = formatDate(dates[dates.length - 1]);
+  return first && last ? `${first} – ${last}` : "";
+});
+
+/** Whole days between two ISO dates (positive when `to` is later). */
+function diffDaysIso(from: string, to: string): number {
+  const [y1, m1, d1] = from.split("-").map(Number);
+  const [y2, m2, d2] = to.split("-").map(Number);
+  return Math.round(
+    (Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000
+  );
+}
+
+function splitFirstDate(): string {
+  return rowDates.value[0] || newTxDateISO.value || "";
+}
+
+/**
+ * Editable repayment window. Changing the start shifts every part by the
+ * same number of days (cadence and any irregular spacing are preserved),
+ * exactly like moving the form date while editing a saved plan.
+ */
+const splitPlanStart = computed({
+  get: splitFirstDate,
+  set(nv) {
+    const ov = splitFirstDate();
+    if (!nv || !ov || nv === ov) return;
+    const deltaDays = diffDaysIso(ov, nv);
+    if (splitStagger.value) {
+      splitAnchor.value = addDaysIso(splitAnchor.value || ov, deltaDays);
+    }
+    for (const r of splitRows.value) {
+      if (r.date) r.date = addDaysIso(r.date, deltaDays);
+    }
+  },
+});
+
+/** Earliest end the picker allows: the second part's date (keeps ≥2 parts). */
+const splitEndMin = computed(
+  () => rowDates.value[1] || rowDates.value[0] || ""
+);
+
+function splitLastDate(): string {
+  return rowDates.value[rowDates.value.length - 1] || "";
+}
+
+/**
+ * Changing the end re-plans the tail: parts are added or removed so the
+ * schedule runs from the start to (roughly) the new end at the current
+ * interval, and amounts are re-split evenly so the plan stays balanced.
+ */
+const splitPlanEnd = computed({
+  get: splitLastDate,
+  set(nv) {
+    const dates = rowDates.value;
+    if (!nv || dates.length < 2 || nv <= dates[0]) return;
+    if (splitStagger.value) {
+      // How many whole intervals from the anchor still land on/before nv?
+      const anchor = splitAnchor.value || dates[0];
+      let k = 0;
+      while (k < 47 && advanceFrequency(anchor, splitFreq.value, k + 1) <= nv) {
+        k++;
+      }
+      const target = Math.min(12, Math.max(2, k + 1));
+      if (target !== splitRows.value.length) {
+        splitCount.value = target;
+        splitRows.value = makeEvenRows(target); // dates derive from the anchor
+      }
+      return;
+    }
+    // Irregular plan (stagger off): keep parts up to the new end, extend
+    // beyond it at the selected interval, then re-split amounts evenly.
+    const next = splitRows.value.filter((r) => (r.date || dates[0]) <= nv);
+    if (next.length < 2) splitRows.value.slice(0, 2).forEach((r) => {
+      if (!next.includes(r)) next.push(r);
+    });
+    while (next.length < 12) {
+      const lastDate = next[next.length - 1].date || dates[0];
+      const nd = advanceFrequency(lastDate, splitFreq.value, 1);
+      if (nd > nv) break;
+      next.push({
+        amount: 0,
+        category: currentCategory.value || props.newTransaction.category || "",
+        date: nd,
+      });
+    }
+    const cents = amountCents.value;
+    const base = Math.floor(cents / next.length);
+    const rem = cents - base * next.length;
+    next.forEach((r, i) => {
+      r.amount = (base + (i < rem ? 1 : 0)) / 100;
+    });
+    splitRows.value = next;
+    splitCount.value = next.length;
+  },
+});
+/** "fortnight" / "week" / "month" / "quarter" — for the help sentence. */
+const splitFreqNoun = computed(() =>
+  splitFreq.value === "fortnightly" ? "fortnight" : splitFreq.value.replace(/ly$/, "")
+);
+
+function makeEvenRows(count: number): SplitRow[] {
+  const cents = amountCents.value;
+  const base = Math.floor(cents / count);
+  const remainder = cents - base * count;
+  const cat = currentCategory.value || props.newTransaction.category || "";
+  return Array.from({ length: count }, (_, i) => {
+    // Reusing an existing row keeps its category when the user just changes
+    // the part count and redistributes. Keeping id/date means a loaded plan's
+    // parts are updated in place on save instead of replaced with new ids.
+    const prev = splitRows.value[i];
+    return {
+      // hand the leftover cents to the first rows so parts sum exactly
+      amount: (base + (i < remainder ? 1 : 0)) / 100,
+      category: prev?.category || cat,
+      id: prev?.id,
+      date: prev?.date,
+    };
+  });
+}
+
+function toggleSplit() {
+  splitOpen.value = !splitOpen.value;
+  splitErrorLocal.value = "";
+  if (splitOpen.value && splitRows.value.length === 0) {
+    splitCount.value = 4;
+    splitRows.value = makeEvenRows(4);
+  }
+}
+
+function applyEvenSplit(count: unknown) {
+  const n = Math.min(12, Math.max(2, Math.floor(Number(count)) || 2));
+  splitCount.value = n;
+  splitRows.value = makeEvenRows(n);
+  splitErrorLocal.value = "";
+}
+
+function addSplitRow() {
+  // New row takes whatever is still unallocated — usually lands at a
+  // balanced total in one click.
+  const cat = currentCategory.value || props.newTransaction.category || "";
+  splitRows.value.push({
+    amount: Math.max(0, splitRemainderCents.value) / 100,
+    category: cat,
+  });
+}
+
+function removeSplitRow(i: number) {
+  splitRows.value.splice(i, 1);
+}
+
+/** Reset split state (parent calls this after save/cancel via expose). */
+function resetSplit() {
+  splitOpen.value = false;
+  splitRows.value = [];
+  splitErrorLocal.value = "";
+  splitCount.value = 4;
+  splitStagger.value = true;
+  splitFreq.value = "fortnightly";
+  splitAnchor.value = "";
+  splitLoadedFromGroup.value = false;
+  loadedGroupKey = "";
+}
+
+type SplitInterval = Exclude<RecurringFrequency, "daily" | "yearly">;
+
+/** Detect a uniform weekly/fortnightly/monthly/quarterly cadence in dates. */
+function detectSplitFreq(dates: string[]): SplitInterval | null {
+  if (dates.length < 2) return null;
+  for (const f of ["weekly", "fortnightly", "monthly", "quarterly"] as const) {
+    if (dates.every((d, i) => advanceFrequency(dates[0], f, i) === d)) return f;
+  }
+  return null;
+}
+
+/** Pre-fill the panel from a saved split group so related parts are visible. */
+function loadSplitGroup(group: Transaction[]) {
+  const sorted = [...group].sort((a, b) => a.date.localeCompare(b.date));
+  splitRows.value = sorted.map((t) => ({
+    amount: t.amount,
+    category: t.category,
+    id: t.id,
+    date: t.date,
+  }));
+  splitCount.value = Math.min(12, Math.max(2, sorted.length));
+  const freq = detectSplitFreq(sorted.map((t) => t.date));
+  if (freq) {
+    // Uniform cadence → show it as a part-pay schedule anchored on the first date.
+    splitStagger.value = true;
+    splitFreq.value = freq;
+    splitAnchor.value = sorted[0].date;
+  } else {
+    // Irregular dates → keep each saved date on its row, stagger off. The
+    // first date still anchors the schedule if the user turns stagger on.
+    splitStagger.value = false;
+    splitAnchor.value = sorted[0].date;
+  }
+  splitLoadedFromGroup.value = true;
+  splitOpen.value = true;
+}
+
+// When the parent opens an edit on a transaction that belongs to a saved
+// split, load every member of the group into the panel. The key guard stops
+// unrelated `transactions` changes from clobbering in-progress row edits.
+let loadedGroupKey = "";
+watch(
+  () => props.splitGroup,
+  (group) => {
+    if (group.length < 2) return; // parent's resetSplit() handles leaving edit
+    const key = [...group].map((t) => t.id).sort().join("|");
+    if (key === loadedGroupKey) return;
+    loadedGroupKey = key;
+    loadSplitGroup(group);
+  },
+  { immediate: true }
+);
+
+/** Validated split parts for the parent's save flow, or null when inactive. */
+function getValidSplitParts(): SplitPart[] | null {
+  if (!splitActive.value) return null;
+  if (splitRows.value.length < splitMinRows.value) {
+    splitErrorLocal.value = `A new split needs at least ${splitMinRows.value} parts.`;
+    return null;
+  }
+  if (!splitBalanced.value) {
+    splitErrorLocal.value = "Split parts must add up to the total amount.";
+    return null;
+  }
+  if (splitRows.value.some((r) => !r.category || !(Number(r.amount) > 0))) {
+    splitErrorLocal.value = "Give every part an amount above 0 and a category.";
+    return null;
+  }
+  if (splitStagger.value && rowDates.value.some((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d))) {
+    splitErrorLocal.value = "Pick a valid date before scheduling repayments.";
+    return null;
+  }
+  splitErrorLocal.value = "";
+  // Normalise to exact cent values so the parts sum to the total, stamp each
+  // part with its save date, and keep loaded rows' ids so re-saving updates
+  // them instead of duplicating.
+  return splitRows.value.map((r, i) => ({
+    amount: Math.round(Number(r.amount) * 100) / 100,
+    category: r.category,
+    date: rowDates.value[i],
+    id: r.id,
+  }));
+}
 const allSimilarSelected = computed(
   () =>
     similarCount.value > 0 &&
@@ -781,6 +1239,27 @@ const currentCategory = defineModel<string>("currentCategory", {
 const selectedTags = defineModel<string[]>("selectedTags", { required: true });
 const newTxDateISO = defineModel<string>("newTxDateIso", { required: true });
 const managerSearch = defineModel<string>("managerSearch", { required: true });
+// Changing the form date while editing a saved plan shifts the whole plan:
+// anchor + each saved row date move by the same day delta, so the cadence —
+// and any irregular spacing — is preserved. (Declared after the models it
+// reads, so the watcher's initial read can't hit a TDZ error.)
+watch(
+  () => newTxDateISO.value,
+  (nv, ov) => {
+    if (!splitLoadedFromGroup.value || !nv || !ov || nv === ov) return;
+    const [y1, m1, d1] = ov.split("-").map(Number);
+    const [y2, m2, d2] = nv.split("-").map(Number);
+    const deltaDays = Math.round(
+      (Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000
+    );
+    if (!deltaDays) return;
+    if (splitAnchor.value) splitAnchor.value = addDaysIso(splitAnchor.value, deltaDays);
+    for (const r of splitRows.value) {
+      if (r.date) r.date = addDaysIso(r.date, deltaDays);
+    }
+  }
+);
+
 const applyToSimilarIds = defineModel<Set<string>>("applyToSimilarIds", {
   required: true,
 });
@@ -1167,5 +1646,9 @@ defineExpose({
   amountInputRef,
   categoryDropdownRef,
   virtViewportRef,
+  splitActive,
+  splitLoadedFromGroup,
+  getValidSplitParts,
+  resetSplit,
 });
 </script>

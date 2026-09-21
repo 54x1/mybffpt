@@ -15,10 +15,14 @@
       Skip to main content
     </a>
     <!-- Global toasts / announcements -->
-    <!-- z-[1050]: must stay above an open dropdown's elevated stacking context
-         (z-index: 1010, see the dropdown backdrop CSS below) so a toast is
-         never hidden behind an open menu. -->
-    <div class="toast toast-top toast-end z-[1050] pointer-events-none" aria-live="polite" aria-atomic="true">
+    <!-- z-[10050]: the sticky header and the Advanced Settings modal both cap
+         their stacking contexts at z-index 10000 (see AppHeader.vue /
+         AdvancedSettingsModal.vue), so a toast had to clear that ceiling to
+         stay visible while either is open. It still sits far below the
+         teleported DatePicker (~2^31) which intentionally outranks everything.
+         The vertical offset that keeps the stack out from under the navbar's
+         painted area lives in style.css next to the mobile toast fixes. -->
+    <div class="toast toast-top toast-end z-[10050] pointer-events-none" aria-live="polite" aria-atomic="true">
       <div v-for="t in toasts" :key="t.id" class="alert pointer-events-auto" :class="{
         'alert-success': t.kind === 'success',
         'alert-info': t.kind === 'info',
@@ -195,7 +199,7 @@
           :all-categories="allCategories" :tag-list="tags" :manager-type="managerType" :manager-items="managerItems"
           :derived-end-date-iso="derivedEndDateISO" :is-default-category="isDefaultCategory"
           :is-hidden-category="isHiddenCategory" :get-category-usage-count="getCategoryUsageCount"
-          :similar-transactions="similarTransactions"
+          :similar-transactions="similarTransactions" :split-group="splitGroupSiblings"
           v-model:current-category="currentCategory" v-model:selected-tags="selectedTags"
           v-model:new-tx-date-iso="newTxDateISO" v-model:manager-search="managerSearch"
           v-model:apply-to-similar-ids="applyToSimilarIds"
@@ -209,11 +213,13 @@
           :share-code-length="shareCodeLength" :share-url-safe-limit="SHARE_URL_SAFE_LIMIT"
           :transaction-count="transactions.length" :export-in-progress="exportInProgress"
           :export-progress="exportProgress" :can-web-share="canWebShare" :import-status="importStatus"
-          :import-error="importError" :last-import-summary="lastImportSummary" @file-upload="handleFileUpload"
+          :import-error="importError" :last-import-summary="lastImportSummary"
+          :pdf-profiles="pdfProfiles" @file-upload="handleFileUpload"
           @import-url-or-code="importFromUrlOrCode" @import-clipboard="importFromClipboard"
           @clear-all="clearAllTransactions" @copy="copy" @download-json="downloadJson"
           @json-import="handleJsonImport" @encrypted-import="handleEncryptedFileImport"
           @open-export-modal="exportModalOpen = true"
+          @delete-pdf-profile="deletePdfProfile"
           @generate-share-codes="encryptedShareModalOpen = true" @web-share="webShare(shareUrl)" />
 
         <!-- Charts Section -->
@@ -271,13 +277,20 @@
     <!-- N3: Password Prompt Modal (replaces window.prompt for encrypted imports) -->
     <PasswordPromptModal v-if="passwordPromptOpen" :title="passwordPromptTitle"
       :info-text="passwordPromptInfo"
-      @close="passwordPromptOpen = false" @submit="finishEncryptedImport" />
+      @close="onPasswordPromptClose" @submit="handlePasswordPromptSubmit" />
 
     <!-- M1: Password Prompt Modal (enable password protection from Settings) -->
     <PasswordPromptModal v-if="protectionPromptOpen" title="Set a master password"
       confirm-label="Set password"
       info-text="Choose a master password to encrypt your transactions, categories and tags on this device. It's only used locally and never stored or sent anywhere."
       @close="protectionPromptOpen = false" @submit="handleProtectionPromptSubmit" />
+
+    <!-- Manual PDF statement column mapper (opens for every imported PDF) -->
+    <PdfColumnMapModal v-if="pdfMapSession" :filename="pdfMapSession.filename"
+      :pages="pdfMapSession.pages" :detection="pdfMapSession.detection"
+      :hint="pdfMapSession.hint" :initial-mapping="pdfMapSession.initialMapping"
+      :matched-profile-label="pdfMapSession.matchedLabel"
+      @confirm="onPdfMapConfirm" @close="onPdfMapClose" />
     </template>
   </div>
 </template>
@@ -296,6 +309,7 @@ import ExportFormatModal from './components/ExportFormatModal.vue';
 import ShareCodeModal from './components/ShareCodeModal.vue';
 import EncryptedShareModal from './components/EncryptedShareModal.vue';
 import PasswordPromptModal from './components/PasswordPromptModal.vue';
+import PdfColumnMapModal from './components/PdfColumnMapModal.vue';
 import ChartsSection from './components/ChartsSection.vue';
 import TagPickerModal from './components/TagPickerModal.vue';
 import LabelImportModal from './components/LabelImportModal.vue';
@@ -345,6 +359,18 @@ import {
   escapeRegExp,
 } from "./utils/text";
 import { safeLocalStorageGet, safeLocalStorageSet } from "./utils/storage";
+import { extractPdfPages, PdfPasswordNeededError, PdfWrongPasswordError, type PdfPageLayout } from "./utils/pdf";
+import {
+  pdfPagesToStatement,
+  detectPdfColumns,
+  fingerprintColumns,
+  profileMatches,
+  type YearHint,
+  type ParsedStatementRow,
+  type PdfColumnDetection,
+  type PdfColumnMapping,
+  type PdfImportProfile,
+} from "./utils/pdfStatement";
 import {
   isSecureContextAvailable,
   isEncryptedStorePresent,
@@ -647,7 +673,8 @@ function addLabelTagFromQuery() {
 
 
 type ImportJob = {
-  file: File;
+  /** Null for PDF imports retried after a password prompt (bytes, not File). */
+  file: File | null;
   rows: Transaction[];
   filename: string;
 };
@@ -1019,9 +1046,29 @@ const similarTransactions = computed(() => {
   if (!currentlyEditingId.value) return [];
   const targetDesc = normDesc(newTransaction.description);
   if (!targetDesc) return [];
+  // Siblings of the saved split being edited belong to the split panel —
+  // they're shown there and re-saved together, so listing them again as
+  // "matching transactions" is confusing double-duty. Keep them out here.
+  const editingGid = transactions.value.find(
+    (t) => t.id === currentlyEditingId.value
+  )?.splitGroupId;
   return transactions.value.filter(
-    (t) => t.id !== currentlyEditingId.value && normDesc(t.description) === targetDesc
+    (t) =>
+      t.id !== currentlyEditingId.value &&
+      !(editingGid && t.splitGroupId === editingGid) &&
+      normDesc(t.description) === targetDesc
   );
+});
+
+// When the transaction being edited is one part of a saved split, every
+// member of that split group — so the form can show the related parts.
+const splitGroupSiblings = computed(() => {
+  if (!currentlyEditingId.value) return [] as Transaction[];
+  const gid = transactions.value.find(
+    (t) => t.id === currentlyEditingId.value
+  )?.splitGroupId;
+  if (!gid) return [] as Transaction[];
+  return transactions.value.filter((t) => t.splitGroupId === gid);
 });
 
 // The candidate list can shrink (user edits the description) or the
@@ -1348,16 +1395,27 @@ const pendingImportContext = ref("Share Import");
 // import once a password is submitted (see `finishEncryptedImport`).
 const pendingEncryptedFile = ref<{ bytes: Uint8Array; filename: string } | null>(null);
 
-// The password prompt is shared by two flows (share-code and encrypted-file).
-// These computed props let the single modal render the right copy per flow.
-const passwordPromptTitle = computed(() =>
-  pendingEncryptedFile.value ? "Decrypt Encrypted Export" : "Decrypt Share Code"
-);
-const passwordPromptInfo = computed(() =>
-  pendingEncryptedFile.value
+// Password-protected PDF state — when a statement PDF refuses to open without
+// a document password we stash its bytes + filename here and reuse the shared
+// password prompt. On submit, `handlePasswordPromptSubmit` retries extraction
+// with the password (see `importPdfFile`).
+const pendingPdfFile = ref<{ bytes: Uint8Array; filename: string } | null>(null);
+
+// The password prompt is shared by three flows (share-code, encrypted-file and
+// password-protected PDF). These computed props let the single modal render
+// the right copy per flow.
+const passwordPromptTitle = computed(() => {
+  if (pendingPdfFile.value) return "Unlock Password-Protected PDF";
+  return pendingEncryptedFile.value ? "Decrypt Encrypted Export" : "Decrypt Share Code";
+});
+const passwordPromptInfo = computed(() => {
+  if (pendingPdfFile.value) {
+    return "This PDF statement is locked. The password is only used to open it locally in your browser and is never stored or sent anywhere.";
+  }
+  return pendingEncryptedFile.value
     ? "This file is password-protected. The password is only used to decrypt it locally in your browser and is never stored or sent anywhere."
-    : undefined
-);
+    : undefined;
+});
 
 // ===== M1: master-password lock screen (encrypt ledger at rest) =====
 // `storeMode` drives which screen renders:
@@ -2834,6 +2892,135 @@ function addTransaction() {
     )
     : "";
 
+  // ===== Split path (add or edit) =====
+  // Editing a member of a saved plan loads the GROUP TOTAL into the form. If
+  // the split UI isn't in play — panel closed, or recurring toggled on (the
+  // panel hides) — put this row's own part amount back so the plain save path
+  // never writes the whole plan total onto one transaction. Only when the
+  // amount is still the untouched group total: an explicit edit here means
+  // "change just this row", and that value must be respected.
+  if (
+    !addFormRef.value?.splitActive &&
+    addFormRef.value?.splitLoadedFromGroup &&
+    currentlyEditingId.value
+  ) {
+    const orig = transactions.value.find((t) => t.id === currentlyEditingId.value);
+    if (orig?.splitGroupId) {
+      const groupTotalCents = transactions.value
+        .filter((t) => t.splitGroupId === orig.splitGroupId)
+        .reduce((s, t) => s + Math.round(t.amount * 100), 0);
+      if (Math.round(Number(newTransaction.amount) * 100) === groupTotalCents) {
+        newTransaction.amount = orig.amount;
+      }
+    }
+  }
+
+  // When the split panel is open with parts that balance to the total, save
+  // one transaction per part instead of a single row. In part-pay mode each
+  // part carries its own date — repayments land one interval apart (default
+  // fortnightly), like a BNPL instalment plan.
+  if (!newTransaction.recurring && addFormRef.value?.splitActive) {
+    const parts = addFormRef.value.getValidSplitParts();
+    if (!parts) return; // validation message shown inside the form
+
+    // All parts share a group id (the first part's id) so editing any one of
+    // them later can reveal the rest of the split.
+    const mkPartBase = (
+      part: { amount: number; category: string; date: string },
+      id: string,
+      groupId: string,
+    ): Transaction => ({
+      ...newTransaction,
+      id,
+      date: part.date || newTransaction.date,
+      amount: part.amount,
+      category: part.category,
+      recurring: false,
+      frequency: undefined,
+      recursions: 1,
+      endDate: "",
+      seriesId: undefined,
+      splitGroupId: groupId,
+      source: newTransaction.source || "Manual",
+    });
+
+    if (currentlyEditingId.value) {
+      const idx = transactions.value.findIndex(
+        (t) => t.id === currentlyEditingId.value
+      );
+      if (idx > -1) {
+        // Re-saving keeps the saved plan's group id when there is one.
+        const original = transactions.value[idx];
+        const groupAnchor = original.splitGroupId || currentlyEditingId.value;
+        // Every member of the old group (incl. this row) is replaced by the
+        // new parts; rows loaded from the group reuse their ids so unchanged
+        // parts update in place instead of duplicating.
+        const editingId = currentlyEditingId.value;
+        let oldCount = 0;
+        let insertAt = -1;
+        const remaining: Transaction[] = [];
+        transactions.value.forEach((t, i) => {
+          if (t.id === editingId || t.splitGroupId === groupAnchor) {
+            oldCount++;
+            if (insertAt < 0) insertAt = i; // keep parts at the group's old spot
+          } else {
+            remaining.push(t);
+          }
+        });
+        const splitTxs = parts.map((p, i) =>
+          mkPartBase(
+            p,
+            p.id || (i === 0
+              ? editingId
+              : `${Date.now()}-${Math.floor(Math.random() * 10000)}-s${i}`),
+            groupAnchor,
+          )
+        );
+        const at = Math.min(insertAt < 0 ? remaining.length : insertAt, remaining.length);
+        transactions.value = [
+          ...remaining.slice(0, at),
+          ...splitTxs,
+          ...remaining.slice(at),
+        ];
+        categorySet.add(splitTxs[0].category);
+        touchCategorySet();
+        pushToast(
+          oldCount > 1
+            ? `Updated split · ${splitTxs.length} parts`
+            : `Split into ${splitTxs.length} transactions`,
+          "success"
+        );
+
+        const editedId = currentlyEditingId.value;
+        currentlyEditingId.value = null;
+        addFormRef.value.resetSplit();
+        resetForm();
+        activeTab.value = "transactions";
+        nextTick(() => {
+          const el = document.getElementById(`tx-${editedId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("border-primary", "bg-base-200");
+            setTimeout(() => el.classList.remove("border-primary", "bg-base-200"), 2000);
+          }
+        });
+        return;
+      }
+    }
+
+    const addIds = parts.map(
+      (_, i) => `${Date.now()}-${Math.floor(Math.random() * 10000)}-s${i}`
+    );
+    const splitTxs = parts.map((p, i) => mkPartBase(p, addIds[i], addIds[0]));
+    transactions.value = [...transactions.value, ...splitTxs];
+    categorySet.add(splitTxs[0].category);
+    touchCategorySet();
+    pushToast(`Added ${splitTxs.length} split transactions`, "success");
+    addFormRef.value.resetSplit();
+    resetForm();
+    return;
+  }
+
   // ===== Edit path =====
   if (currentlyEditingId.value) {
     const idx = transactions.value.findIndex(
@@ -3011,6 +3198,7 @@ function resetForm() {
     recursions: lastRecurring.recursions,
     endDate: "",
     seriesId: undefined, // clear any series link left over from an edit
+    splitGroupId: undefined,
   });
   currentlyEditingId.value = null;
   applyToSimilarIds.value = new Set();
@@ -3029,6 +3217,7 @@ function cancelAddTransaction() {
     newTransaction.tags.length > 0;
   if (hasDraft && !confirm("Discard unsaved changes?")) return;
 
+  addFormRef.value?.resetSplit();
   resetForm();
 
   // Return to the tab the user was on before opening Add (fallback: About).
@@ -3042,11 +3231,20 @@ function editTransaction(t: Transaction) {
   // this tick) sees an active edit and skips persisting these loaded values.
   currentlyEditingId.value = t.id;
   applyToSimilarIds.value = new Set();
+  addFormRef.value?.resetSplit();
   // Remember where we came from so Cancel can return there.
   if (activeTab.value !== "add") previousTab.value = activeTab.value;
   // Copy tags — sharing the array would let form edits mutate the original
   // transaction even when the edit is cancelled.
   Object.assign(newTransaction, t, { tags: [...(t.tags ?? [])] });
+  // Editing one part of a saved split: show the whole plan (total amount +
+  // every part) so the user sees the related splits, not just this row.
+  if (t.splitGroupId) {
+    const group = transactions.value.filter((x) => x.splitGroupId === t.splitGroupId);
+    if (group.length >= 2) {
+      newTransaction.amount = Math.round(group.reduce((s, x) => s + x.amount * 100, 0)) / 100;
+    }
+  }
   activeTab.value = "add";
   scrollAddIntoView();
   focusAmount();
@@ -3068,6 +3266,7 @@ function duplicateTx(t: Transaction) {
     ...t,
     id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     seriesId: undefined, // a duplicate is independent of the original series
+    splitGroupId: undefined, // …and of any split plan it belonged to
   };
   transactions.value = [...transactions.value, copy];
   // OPTIMIZED: Update category set incrementally
@@ -3585,6 +3784,267 @@ function parseCsvTextToTransactions(text: string, fallbackLabel: string): Transa
   return txs;
 }
 
+// Year hint for yearless statement dates ("2 JUL"): prefer a 4-digit year in
+// the filename (e.g. "statement-2026-07.pdf"), else the current year.
+function yearHintFromFilename(filename: string): YearHint {
+  const m = /(19|20)\d{2}/.exec(filename);
+  return { year: m ? Number(m[0]) : new Date().getFullYear() };
+}
+
+// Resolver for the in-flight PDF password prompt (see `askPdfPassword`). The
+// upload loop awaits each locked PDF's prompt before moving to the next file,
+// so multiple protected PDFs in one batch are handled sequentially instead of
+// clobbering a single stash.
+let pdfPasswordResolver: ((pw: string | null) => void) | null = null;
+
+// Opens the shared password prompt for `pendingPdfFile` and waits for the
+// user's answer: the typed password, or null when cancelled.
+function askPdfPassword(bytes: Uint8Array, filename: string): Promise<string | null> {
+  pendingPdfFile.value = { bytes, filename };
+  return new Promise((resolve) => {
+    pdfPasswordResolver = resolve;
+    passwordPromptOpen.value = true;
+  });
+}
+
+// Maps parsed statement rows straight to Transactions — deliberately NOT via
+// `parseCsvTextToTransactions`, because its expenses-positive convention scan
+// would misinterpret our explicit signs (e.g. an income-only statement).
+// Mirrors the normalization in `rowToTransaction` (auto category/tags, type).
+function statementRowsToTransactions(rows: ParsedStatementRow[], source: string): Transaction[] {
+  const out: Transaction[] = [];
+  for (const r of rows) {
+    if (!r.dateISO || !isFinite(r.amount) || r.amount === 0) continue;
+    const description = r.description.trim() || "Transaction";
+    const category = autoCategoryFor(description) || "Uncategorized";
+    out.push({
+      id: `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      date: r.dateISO,
+      type: r.amount < 0 ? "spending" : "income",
+      amount: Math.abs(Number(r.amount.toFixed(2))),
+      category,
+      tags: autoTagsFor(description, category),
+      description,
+      source,
+    });
+  }
+  return out;
+}
+
+// ── Saved PDF column layouts (manual mapper) ────────────────────────────────
+// A profile records a user-chosen column mapping for one statement layout,
+// keyed by the geometry fingerprint of its numeric columns. Not sensitive —
+// only column positions and a user-typed bank label — so it lives in plain
+// localStorage alongside categories/tags.
+
+function normalizePdfProfile(raw: unknown): PdfImportProfile | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Record<string, unknown>;
+  const m = p.mapping as Record<string, unknown> | undefined;
+  if (!m || (m.mode !== "single" && m.mode !== "split")) return null;
+  const num = (v: unknown): number | undefined =>
+    typeof v === "number" && isFinite(v) ? v : undefined;
+  const mapping: PdfColumnMapping = { mode: m.mode };
+  const singleAnchor = num(m.singleAnchor);
+  const debitAnchor = num(m.debitAnchor);
+  const creditAnchor = num(m.creditAnchor);
+  const descAnchor = num(m.descAnchor);
+  if (singleAnchor !== undefined) mapping.singleAnchor = singleAnchor;
+  if (debitAnchor !== undefined) mapping.debitAnchor = debitAnchor;
+  if (creditAnchor !== undefined) mapping.creditAnchor = creditAnchor;
+  if (descAnchor !== undefined) mapping.descAnchor = descAnchor;
+  // A usable mapping needs at least one amount column.
+  const hasAmount =
+    mapping.mode === "split"
+      ? mapping.debitAnchor !== undefined || mapping.creditAnchor !== undefined
+      : mapping.singleAnchor !== undefined;
+  if (!hasAmount) return null;
+  return {
+    id: typeof p.id === "string" && p.id ? p.id : `pdfmap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    label: typeof p.label === "string" && p.label.trim() ? p.label.trim().slice(0, 60) : "Statement layout",
+    createdAt: typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString(),
+    fingerprint: typeof p.fingerprint === "string" ? p.fingerprint : "",
+    mapping,
+  };
+}
+
+function loadPdfProfiles(): PdfImportProfile[] {
+  const raw = safeLocalStorageGet(LS_KEYS.pdfMaps);
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizePdfProfile).filter((p): p is PdfImportProfile => p !== null);
+}
+
+const pdfProfiles = ref<PdfImportProfile[]>(loadPdfProfiles());
+
+function persistPdfProfiles() {
+  safeLocalStorageSet(LS_KEYS.pdfMaps, pdfProfiles.value);
+}
+
+function deletePdfProfile(id: string) {
+  pdfProfiles.value = pdfProfiles.value.filter((p) => p.id !== id);
+  persistPdfProfiles();
+  pushToast("Removed saved statement layout", "info");
+}
+
+// Merge profiles from an imported JSON backup, de-duplicated by fingerprint +
+// mapping so re-importing the same file doesn't pile up copies.
+function mergeImportedPdfProfiles(raw: unknown): number {
+  if (!Array.isArray(raw)) return 0;
+  const incoming = raw.map(normalizePdfProfile).filter((p): p is PdfImportProfile => p !== null);
+  let added = 0;
+  for (const inc of incoming) {
+    const dupe = pdfProfiles.value.some(
+      (p) =>
+        p.fingerprint === inc.fingerprint &&
+        JSON.stringify(p.mapping) === JSON.stringify(inc.mapping),
+    );
+    if (dupe) continue;
+    pdfProfiles.value.push(inc);
+    added++;
+  }
+  if (added) persistPdfProfiles();
+  return added;
+}
+
+// Session state for the in-flight column mapper: one PDF at a time, awaited
+// by the upload loop just like the password prompt.
+const pdfMapSession = ref<{
+  pages: PdfPageLayout[];
+  filename: string;
+  detection: PdfColumnDetection;
+  hint: YearHint | null;
+  initialMapping: PdfColumnMapping | null;
+  matchedLabel: string | null;
+} | null>(null);
+let pdfMapResolver: ((r: { mapping: PdfColumnMapping; saveLabel: string | null } | null) => void) | null = null;
+
+function askColumnMapping(
+  pages: PdfPageLayout[],
+  filename: string,
+  detection: PdfColumnDetection,
+  hint: YearHint | null,
+  initialMapping: PdfColumnMapping | null,
+  matchedLabel: string | null,
+): Promise<{ mapping: PdfColumnMapping; saveLabel: string | null } | null> {
+  pdfMapSession.value = { pages, filename, detection, hint, initialMapping, matchedLabel };
+  return new Promise((resolve) => {
+    pdfMapResolver = resolve;
+  });
+}
+
+function onPdfMapConfirm(mapping: PdfColumnMapping, saveLabel: string | null) {
+  const session = pdfMapSession.value;
+  if (session && saveLabel) {
+    // Save (or replace a same-fingerprint profile with the same label).
+    const fingerprint = fingerprintColumns(session.detection);
+    const existing = pdfProfiles.value.find(
+      (p) => p.fingerprint === fingerprint && p.label === saveLabel,
+    );
+    if (existing) {
+      existing.mapping = mapping;
+    } else {
+      pdfProfiles.value.push({
+        id: `pdfmap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        label: saveLabel.slice(0, 60),
+        createdAt: new Date().toISOString(),
+        fingerprint,
+        mapping,
+      });
+    }
+    persistPdfProfiles();
+  }
+  const resolve = pdfMapResolver;
+  pdfMapResolver = null;
+  pdfMapSession.value = null;
+  resolve?.({ mapping, saveLabel });
+}
+
+function onPdfMapClose() {
+  const resolve = pdfMapResolver;
+  pdfMapResolver = null;
+  pdfMapSession.value = null;
+  resolve?.(null);
+}
+
+// Extracts + parses a PDF statement and pushes the result into the import
+// queue (same label-modal flow as CSV). Encrypted documents loop through the
+// shared password prompt until unlocked or cancelled. After extraction the
+// manual column mapper always opens (pre-filled from auto-detection or a
+// matching saved layout) so foreign statements can be mapped by hand.
+async function importPdfFile(bytes: Uint8Array, filename: string) {
+  let password: string | undefined;
+  for (;;) {
+    try {
+      const pages = await extractPdfPages(bytes, password);
+      pendingPdfFile.value = null;
+      const fallbackLabel = filename.replace(/\.[^.]+$/, "");
+      const hint = yearHintFromFilename(filename);
+
+      // Geometry + a reference auto-parse (for the pre-select suggestion).
+      const detection = detectPdfColumns(pages, hint);
+      if (detection.rowCount === 0) {
+        pushToast(
+          `No transactions found in ${filename} — try exporting a CSV statement instead`,
+          "warning",
+        );
+        return;
+      }
+      const auto = pdfPagesToStatement(pages, hint);
+
+      // A saved layout whose numeric columns match pre-selects the mapper.
+      const match = pdfProfiles.value.find((p) => profileMatches(p, detection)) ?? null;
+      if (match) {
+        pushToast(`Applying saved layout "${match.label}" to ${filename}`, "info");
+      }
+
+      const answer = await askColumnMapping(
+        pages,
+        filename,
+        detection,
+        hint,
+        match?.mapping ?? auto.autoMapping ?? null,
+        match?.label ?? null,
+      );
+      if (!answer) {
+        pushToast(`Skipped ${filename} — column mapping cancelled`, "warning");
+        return;
+      }
+
+      const result = pdfPagesToStatement(pages, hint, answer.mapping);
+      const txs = statementRowsToTransactions(result.rows, fallbackLabel);
+      if (!txs.length) {
+        pushToast(
+          `No transactions matched those columns in ${filename} — try different ones`,
+          "warning",
+        );
+        return;
+      }
+      importQueue.value.push({ file: null, rows: txs, filename });
+      pushToast(
+        `Parsed ${filename}: kept ${txs.length} transactions (${result.mode} layout)`,
+        "success",
+      );
+      return;
+    } catch (err) {
+      if (err instanceof PdfPasswordNeededError || err instanceof PdfWrongPasswordError) {
+        // First prompt is silent; subsequent failures report the wrong password.
+        if (password !== undefined) pushToast("Incorrect PDF password — try again", "error");
+        const next = await askPdfPassword(bytes, filename);
+        if (next === null) {
+          pendingPdfFile.value = null;
+          pushToast(`Skipped ${filename} — no PDF password supplied`, "warning");
+          return;
+        }
+        password = next;
+        continue;
+      }
+      devError("Failed to read PDF:", err);
+      pushToast(`Failed to read ${filename}${err instanceof Error ? `: ${err.message}` : ""}`, "error");
+      return;
+    }
+  }
+}
+
 function handleFileUpload(e: Event) {
   const input = e.target as HTMLInputElement;
   const files = Array.from(input.files || []);
@@ -3597,6 +4057,16 @@ function handleFileUpload(e: Event) {
   // Queue all files (we parse sequentially for better UX)
   (async () => {
     for (const f of files) {
+      if (/\.pdf$/i.test(f.name)) {
+        try {
+          const bytes = new Uint8Array(await f.arrayBuffer());
+          await importPdfFile(bytes, f.name);
+        } catch (err) {
+          devError("Failed to parse PDF:", err);
+          pushToast(`Failed to parse ${f.name}`, "error");
+        }
+        continue;
+      }
       try {
         const text = await f.text();
         // Build a source label placeholder; user can rename in modal
@@ -3614,8 +4084,10 @@ function handleFileUpload(e: Event) {
       }
     }
     importStatus.value = "";
-    // kick off modal for first job
-    if (!importingNow) prepareNextImport();
+    // A PDF waiting on a document password or the column mapper pauses the
+    // queue: `prepareNextImport` runs after the prompt resolves (see
+    // `handlePasswordPromptSubmit` / `onPdfMapConfirm`).
+    if (!importingNow && !pendingPdfFile.value && !passwordPromptOpen.value && !pdfMapSession.value) prepareNextImport();
     // reset file input to allow re-selecting the same files later
     input.value = "";
   })();
@@ -3643,7 +4115,7 @@ function prepareNextImport() {
 
   labelImport.open = true;
   labelImport.filename = job.filename;
-  labelImport.label = job.file.name.replace(/\.[^.]+$/, "");
+  labelImport.label = job.filename.replace(/\.[^.]+$/, "");
   labelImport.note = "";
   labelImport.imported = unique;
   labelImport.autoDetectedTags = sortAlpha(
@@ -3809,6 +4281,32 @@ async function importFromUrlOrCode() {
   }
 }
 
+// Routes a password-prompt submission to the right flow. The shared modal is
+// used by three import paths; whichever `pending*` stash is filled decides:
+//   1. Password-protected PDF → resolve the awaiting upload loop's promise.
+//   2/3. Encrypted share code or `.enc` file → finishEncryptedImport.
+async function handlePasswordPromptSubmit(password: string) {
+  if (pdfPasswordResolver && pendingPdfFile.value) {
+    const resolve = pdfPasswordResolver;
+    pdfPasswordResolver = null;
+    passwordPromptOpen.value = false;
+    resolve(password);
+    return;
+  }
+  await finishEncryptedImport(password);
+}
+
+// The user cancelled the prompt. For a PDF we resolve with null so its import
+// is skipped (with a friendly toast) and any queued imports resume.
+function onPasswordPromptClose() {
+  passwordPromptOpen.value = false;
+  if (pdfPasswordResolver && pendingPdfFile.value) {
+    const resolve = pdfPasswordResolver;
+    pdfPasswordResolver = null;
+    resolve(null);
+  }
+}
+
 // Completes an encrypted import after the user submits a password in the
 // PasswordPromptModal. Handles two flows:
 //   1. Encrypted share code (`enc:`) — decrypt + validate + label-import.
@@ -3930,11 +4428,24 @@ function handleJsonImport(event: Event) {
       const content = e.target?.result as string;
       const data = JSON.parse(content);
 
+      // Restore saved PDF column layouts if the backup carries them — done
+      // before transaction validation so a layout-only backup still works.
+      const restoredLayouts = mergeImportedPdfProfiles((data as Record<string, unknown>)?.pdfImportMappings);
+      if (restoredLayouts > 0) {
+        pushToast(
+          `Restored ${restoredLayouts} saved statement layout${restoredLayouts > 1 ? "s" : ""}`,
+          "success",
+        );
+      }
+
       let imported: Transaction[] = [];
       if (Array.isArray(data)) {
         imported = data.map(normalizeTransaction);
       } else if (Array.isArray(data.transactions)) {
         imported = data.transactions.map(normalizeTransaction);
+      } else if (restoredLayouts > 0) {
+        // Layout-only backup: nothing to queue, the restore toast already fired.
+        return;
       } else {
         throw new Error("Invalid JSON format");
       }
@@ -4033,6 +4544,9 @@ async function downloadJson() {
       transactions: transactions.value,
       exportDate: new Date().toISOString(),
       version: version.value,
+      // Saved PDF statement column layouts travel with the backup so another
+      // device imports foreign statements with these mappings preconfigured.
+      pdfImportMappings: pdfProfiles.value,
     };
 
     const content = JSON.stringify(data, null, 2);
@@ -4157,6 +4671,7 @@ function buildExportBlob(): Blob {
     transactions: transactions.value,
     exportDate: new Date().toISOString(),
     version: version.value,
+    pdfImportMappings: pdfProfiles.value,
   };
   return new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
