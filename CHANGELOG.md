@@ -39,6 +39,10 @@ All notable changes to this project are documented here. The format follows
 - This changelog.
 
 ### Changed
+- About page now backs its privacy claims with verifiable proof (no-server,
+  CSP-enforced, local-by-construction imports, standard Web Crypto, published
+  SBOM) and a per-library table explaining what every runtime dependency does
+  and that none of them access the network; added an OCR-specific FAQ entry.
 - CI runs with a read-only `GITHUB_TOKEN`, cancels superseded runs, and installs
   dependencies with `npm ci --ignore-scripts`.
 - Dependabot now also tracks GitHub Actions and no longer ignores major

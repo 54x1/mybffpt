@@ -74,6 +74,103 @@
 
         <div class="divider"></div>
 
+        <h2 class="text-2xl font-bold">🛡️ Full Transparency</h2>
+      
+        <ul class="list-disc pl-5 space-y-2">
+          <strong>Why it's safe to read your statements from myBFFPT — myBudget Forecaster?</strong>
+          <li>
+            <strong>There is no server.</strong> No backend, no account, no
+            database. The app is a set of static files that run in your
+            browser — there is literally nowhere for your data to be sent.
+          </li>
+          <li>
+            <strong>The browser enforces it.</strong> A Content-Security-Policy
+            of <code>default-src 'self'</code> (view this page's source) forbids
+            the app from contacting any other website. Even a bug or a
+            compromised dependency could not post your data anywhere — the
+            browser blocks it. Open DevTools → Network while importing a
+            statement: after the page has loaded you'll see zero requests.
+          </li>
+          <li>
+            <strong>Imports are local by construction.</strong> CSV parsing,
+            PDF text extraction and OCR all run on your device. The file picker
+            hands the bytes straight to our parsers — no upload code exists in
+            this app.
+          </li>
+          <li>
+            <strong>The crypto is real, not homebrew.</strong> Optional
+            encryption at rest uses AES-256-GCM with a PBKDF2-SHA256 key
+            (600,000 iterations) via the browser's built-in Web Crypto API —
+            standard, widely audited primitives.
+          </li>
+          <li>
+            <strong>Auditable end-to-end.</strong> AGPL-3.0 open source with a
+            published CycloneDX SBOM and full third-party licence notices, so
+            anyone can check exactly what ships and how your data is handled
+            (links at the bottom of this page).
+          </li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h2 class="text-2xl font-bold">📦 What our libraries do</h2>
+        <p>
+          These are the app's only runtime dependencies — what each one does,
+          and whether it can talk to the network:
+        </p>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <caption class="sr-only">
+              Runtime libraries, their purpose, and their network access
+            </caption>
+            <thead>
+              <tr>
+                <th>Library</th>
+                <th>What it does here</th>
+                <th>Network access</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-semibold">Vue 3</td>
+                <td>Renders the interface and keeps your data in memory while you use the app.</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">DaisyUI / Tailwind CSS</td>
+                <td>Styles everything. Compiled into our own stylesheet at build time — no CDN themes or fonts.</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Chart.js / vue-chartjs</td>
+                <td>Draws your charts from the transactions already on this device.</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">D3</td>
+                <td>Data layouts and scales for specialised visuals (e.g. the bubble map).</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">pdf.js (Mozilla)</td>
+                <td>Parses PDF bank statements — including password-protected ones — inside your browser. Its worker runs from this site's own files.</td>
+                <td>None — document bytes never leave the tab</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Tesseract.js + English model</td>
+                <td>Reads scanned (image-only) PDFs with OCR. The WASM engine and language model are self-hosted on this site, not fetched from a CDN.</td>
+                <td>None — page images stay in memory on your device</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-sm opacity-70">
+          Nothing else runs at runtime. Every dependency is licence-checked and
+          listed in the SBOM and third-party notices linked below.
+        </p>
+
+        <div class="divider"></div>
+
         <h2 class="text-2xl font-bold">❓ Security &amp; Privacy FAQ</h2>
 
         <div class="space-y-2">
@@ -105,6 +202,25 @@
                 <strong>you</strong> choose to export a file or generate a
                 share code, and even then it's your device creating that data,
                 not a server.
+              </p>
+            </div>
+          </div>
+
+          <div class="collapse collapse-arrow bg-base-200">
+            <input type="checkbox" aria-labelledby="faqOcr" />
+            <div id="faqOcr" class="collapse-title font-semibold">
+              You can OCR scanned PDFs — do those page images leave my device?
+            </div>
+            <div class="collapse-content text-sm">
+              <p>
+                No. Scanned pages are rendered to canvases and recognized by
+                tesseract.js, an open-source OCR engine compiled to WebAssembly
+                that runs entirely in your browser. The WASM runtime and English
+                language model are served from this app's own origin (never a
+                CDN), so the Content-Security-Policy still blocks every outside
+                connection. A scanned statement imports with exactly the same
+                guarantees as a text one — and you always confirm the parsed
+                rows in the column mapper before anything is saved.
               </p>
             </div>
           </div>
@@ -241,7 +357,8 @@
             🔄 <strong>Auto-Categorization</strong> - Smart category suggestions
           </li>
           <li>
-            📥 <strong>CSV Import</strong> - Supports the 4 major Australian banks and more!
+            📥 <strong>CSV &amp; PDF Import</strong> - Major Australian banks,
+            text PDFs, and in-browser OCR for scanned statements!
           </li>
           <li>
             💾 <strong>Auto-Recall</strong> - Seamlessly loads local data from
@@ -259,7 +376,7 @@
         <h2 class="text-2xl font-bold">🚀 Future Features</h2>
 
         <ul class="space-y-2">
-          <li>- Add local in memory in browser PDF support </li>
+          <li>- Improve OCR accuracy across more bank statement layouts</li>
           <li>- Improve Wise Bank support</li>
           <li>- Improve interactive bubble map chart type</li>
           <li>- Improve select on page priority top </li>
@@ -273,6 +390,7 @@
           <li>Vue 3 with TypeScript</li>
           <li>DaisyUI for styling</li>
           <li>Chart.js for analytics</li>
+          <li>pdf.js + tesseract.js for fully-local PDF &amp; OCR parsing</li>
         </ul>
 
         <div class="divider"></div>
