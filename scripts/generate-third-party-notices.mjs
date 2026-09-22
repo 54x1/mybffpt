@@ -155,7 +155,11 @@ let stale = false;
 for (const [file, content] of outputs) {
   if (checkOnly) {
     let current = '';
-    try { current = readFileSync(file, 'utf8'); } catch {}
+    try {
+      current = readFileSync(file, 'utf8');
+    } catch {
+      // file missing — treated as stale below
+    }
     if (current !== content) {
       console.error(`${file} is missing or stale; run npm run license:notices`);
       stale = true;

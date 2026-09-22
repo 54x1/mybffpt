@@ -109,7 +109,7 @@ describe("pdfPagesToStatement — single amount column", () => {
       "Transaction History                       Page 1 of 2",
       "Date        Description                          Amount",
       "02/07/2026  COLES ONLINE                        -54.30",
-      "03/07/2026  SALARY                3,200.00",
+      "03/07/2026  SALARY                            3,200.00",
       "05/07/2026  BUPA PHARMACY                       -18.90",
       "            additional reference text only",
       "Balance carried forward                        4,132.80",
@@ -454,7 +454,7 @@ describe("pdfPagesToStatement — explicit column mapping", () => {
     // An amount-looking cell sits between the text and the assigned column.
     const leaky = pages(
       "02/07/2026   COLES ONLINE   -54.30   REF 9911   1,000.00",
-      "03/07/2026   SALARY     3,200.00            4,200.00",
+      "03/07/2026   SALARY     3,200.00                4,200.00",
     );
     const det = detectPdfColumns(leaky, HINT);
     const nums = det.columns.filter((c) => c.kind === "numeric").map((c) => c.anchorCol).sort((a, b) => a - b);

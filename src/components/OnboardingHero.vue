@@ -10,9 +10,10 @@
 -->
 <template>
   <!-- Get Started / Onboarding -->
-  <section class="fixed inset-0 z-[60] bg-base-100/90 backdrop-blur p-4 lg:p-10" role="dialog"
-    aria-modal="true" aria-labelledby="onboardingTitle" @keydown.escape.prevent="$emit('skip')">
-    <div class="max-w-3xl mx-auto" tabindex="-1">
+  <section ref="overlayRef" class="fixed inset-0 z-[60] bg-base-100/90 backdrop-blur p-4 lg:p-10" role="dialog"
+    aria-modal="true" aria-labelledby="onboardingTitle" tabindex="-1"
+    @keydown.escape.prevent="$emit('skip')">
+    <div class="max-w-3xl mx-auto">
       <div class="card bg-base-100 shadow-2xl">
         <div class="card-body p-6 lg:p-8 space-y-6">
           <!-- Step 0 -->
@@ -67,9 +68,19 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from "vue";
+
 defineProps<{
   step: number;
 }>();
+
+// Move focus into the overlay when it opens — without this, keyboard/SR
+// users stay on the page behind it (the overlay is not a native <dialog>,
+// so nothing focuses it automatically).
+const overlayRef = ref<HTMLElement | null>(null);
+onMounted(() => {
+  overlayRef.value?.focus();
+});
 
 defineEmits<{
   (e: "import"): void;

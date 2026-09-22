@@ -247,6 +247,7 @@ export async function ocrPdfPages(
     await task.destroy().catch(() => {});
     throw new Error(
       `OCR engine failed to load (${(err as Error)?.message ?? err})`,
+      { cause: err },
     );
   }
 

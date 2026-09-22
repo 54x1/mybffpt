@@ -611,12 +611,12 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import AdvancedSettingsModal from './AdvancedSettingsModal.vue';
 import { buildTimeSeriesBuckets, type ChartGroupBy } from '../utils/chartBuckets';
-import type { Chart, ChartData, ChartOptions, ChartType, ScriptableContext } from 'chart.js';
+import type { Chart } from 'chart.js';
 import type { Transaction } from '../utils/types';
 import { eqi, containsCaseIns, sortAlpha, dedupeCI } from '../utils/text';
 import { toLocalISO, todayLocalISO, parseDateGuess, startOfFortnight, startOfQuarter } from '../utils/dates';
 import {
-  cssVarToRGB, withAlpha, themeColor, invalidateColorCaches, themePalette,
+  cssVarToRGB, withAlpha, themeColor, invalidateColorCaches,
   getCategoryColor, formatChartTooltipTitle, resolveTooltipColor,
 } from '../utils/themeColors';
 import { useToasts } from '../composables/useToasts';
@@ -640,7 +640,7 @@ const props = defineProps<{
   lastImportSummary: string;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'tab', id: string): void;
   (e: 'dismiss-import-summary'): void;
 }>();
@@ -857,7 +857,7 @@ const availableTagsForChart = computed(() => {
 });
 
 // Watch for category deselection and clear invalid tags
-watch(selectedCategoriesChart, (newCats) => {
+watch(selectedCategoriesChart, () => {
   const available = availableTagsForChart.value;
   selectedTagsChart.value = selectedTagsChart.value.filter(tag =>
     available.some(a => eqi(a, tag))
@@ -870,7 +870,7 @@ const bubbleHierarchySvg = ref<SVGSVGElement | null>(null);
 onUnmounted(() => {
   // Destroy chart instance to prevent memory leaks
   if (chartInstance) {
-    try { chartInstance.destroy(); } catch (e) { /* ignore */ }
+    try { chartInstance.destroy(); } catch { /* already destroyed */ }
     chartInstance = null;
   }
   // Clear pending render timeout
@@ -1094,12 +1094,7 @@ const chartFilteredTransactions = computed(() => {
 });
 
 // Chart-specific stats (only evaluated when chart tab is mounted via v-if)
-const chartFilteredForStats = computed(() => {
-  if (typeof chartFilteredTransactions !== 'undefined') {
-    return chartFilteredTransactions.value;
-  }
-  return filteredTransactions.value;
-});
+const chartFilteredForStats = computed(() => chartFilteredTransactions.value);
 const incomeTransactions = computed(() =>
   chartFilteredForStats.value.filter((t) => t.type === "income")
 );
@@ -1207,7 +1202,6 @@ const chartCategories = computed(() => {
   return [...s]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-  return Array.from(s).sort();
 });
 
 const showAllCategoryBadges = ref(false);
@@ -1224,7 +1218,6 @@ const chartTags = computed(() => {
   return [...s]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-  return Array.from(s).sort();
 });
 
 
@@ -1238,9 +1231,7 @@ const chartData = computed(() => {
     return { labels: [], datasets: [] };
   }
 
-  const sourceList = typeof chartFilteredTransactions !== 'undefined'
-    ? chartFilteredTransactions.value
-    : filteredTransactions.value;
+  const sourceList = chartFilteredTransactions.value;
 
   let base = sourceList;
 
@@ -1693,7 +1684,7 @@ async function renderChart() {
 
           // Calculate end-of-month position (midpoint between current and next data point)
           const currentPoint = datasetMeta.data[activeIndex];
-          let endOfMonthX = currentPoint.x;
+          let endOfMonthX: number;
 
           if (activeIndex + 1 < datasetMeta.data.length) {
             const nextPoint = datasetMeta.data[activeIndex + 1];
@@ -1952,7 +1943,7 @@ async function renderChart() {
                 padding: 12,
                 font: { size: 11 },
               },
-              onClick: (e: any, legendItem: any, legend: any) => {
+              onClick: (_e: any, legendItem: any) => {
                 if (isPieish || isRadar || isScatter) return;
                 const label = (legendItem as any).text;
                 const map: Record<string, keyof typeof seriesToggles.value> = {
@@ -2511,7 +2502,7 @@ async function renderBubbleHierarchy() {
             d.children ? themeColor("primary") : themeColor("base1")
           );
       })
-      .on("mouseleave", function (event, d: any) {
+      .on("mouseleave", function () {
         d3.select(this)
           .transition()
           .duration(200)
@@ -2540,6 +2531,7 @@ async function renderBubbleHierarchy() {
       const cleaned = s.replace(/[&<>'"]/g, (m) => {
         const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
         return map[m] || m;
+      // eslint-disable-next-line no-control-regex -- intentionally strips control chars from user data
       }).replace(/[\x00-\x1F\x7F]/g, '').trim();
       return cleaned.length > maxLen ? cleaned.slice(0, maxLen) + '…' : cleaned;
     }
@@ -2652,6 +2644,7 @@ async function renderBubbleHierarchy() {
             const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
             return map[m] || m;
           })
+          // eslint-disable-next-line no-control-regex -- intentionally strips control chars from user data
           .replace(/[\x00-\x1F\x7F]/g, '') // Strip control characters
           .replace(/\s+/g, ' ')            // Normalize whitespace
           .trim();
@@ -2805,381 +2798,8 @@ watch(
   { immediate: true }
 );
 
-function yExtent(): [number, number] {
-  const t = chartConfig.value.type;
-  if (t !== "line" && t !== "bar") return [0, 0];
 
-  const ds: any[] = (chartData.value as any).datasets || [];
-  let min = 0,
-    max = 0;
 
-  for (const d of ds) {
-    for (const v of d.data as number[]) {
-      if (typeof v !== "number" || !isFinite(v)) continue;
-      min = Math.min(min, v);
-      max = Math.max(max, v);
-    }
-  }
-
-  if (min === 0 && max === 0) return [0, 1]; // empty protection
-  const pad = Math.max(1, (max - min) * 0.05);
-  return [min - pad, max + pad];
-}
-
-function makeOptions(): ChartOptions {
-  const type = chartConfig.value.type;
-
-  // Get theme colors
-  const grid = withAlpha(cssVarToRGB("--bc"), 0.2);
-  const ticks = cssVarToRGB("--bc");
-  const neutralBG = themeColor("neutral", 0.95);
-  const borderColor = cssVarToRGB("--bc");
-  const titleColor = themeColor("neutralContent");
-  const bodyColor = themeColor("neutralContent");
-
-  const base: ChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: { duration: 250 },
-    plugins: {
-      legend: {
-        display: true,
-        labels: {
-          usePointStyle: type !== "bar",
-          color: ticks,
-        },
-        onClick: (e, legendItem, legend) => {
-          // Only wire toggles for time-series chart types
-          if (!['bar', 'line', 'radar', 'scatter'].includes(type)) return;
-
-          const label = (legendItem as any).text;
-          const chart = legend.chart;
-
-          // Map legend label → seriesToggles key
-          const map: Record<string, keyof typeof seriesToggles.value> = {
-            'Income': 'income',
-            'Spending': 'spending',
-            'Period Net': 'balance',
-            'Cumulative Net': 'allTimeCumulativeNetBalance',
-          };
-
-          const key = map[label];
-          if (key) {
-            // Toggle the series visibility
-            seriesToggles.value[key] = !seriesToggles.value[key];
-
-            // Sync the legend internal hidden state so the visual state matches
-            const datasetIndex = (legendItem as any).datasetIndex;
-            if (datasetIndex != null) {
-              const meta = chart.getDatasetMeta(datasetIndex);
-              if (meta) {
-                meta.hidden = !seriesToggles.value[key];
-              }
-            }
-
-            // Update the chart to reflect the change immediately
-            chart.update();
-          }
-        },
-      },
-      tooltip: {
-        backgroundColor: neutralBG,
-        borderColor,
-        borderWidth: 1,
-        titleColor,
-        bodyColor,
-        callbacks: {
-          label: (ctx) => {
-            if (type === "pie" || type === "doughnut") {
-              const label = ctx.label || "";
-              const val = Array.isArray(ctx.parsed)
-                ? ctx.parsed[0]
-                : (ctx.parsed as number);
-              return `${label}: $${val.toFixed(2)}`;
-            }
-            const label = ctx.dataset?.label || "";
-            const y = (ctx.parsed as any)?.y ?? 0;
-            return `${label}: $${Number(y).toFixed(2)}`;
-          },
-        },
-      },
-    },
-  };
-
-  if (type === "line" || type === "bar") {
-    base.scales = {
-      x: {
-        type: "category",
-        ticks: { autoSkip: true, maxRotation: 0, color: ticks },
-        grid: { color: grid },
-        border: { color: grid },
-      },
-      y: {
-        type: "linear",
-        ticks: {
-          callback: (v) => `$${Number(v).toFixed(2)}`,
-          color: ticks
-        },
-        grid: { color: grid },
-        border: { color: grid },
-      },
-    };
-  }
-
-  return base;
-}
-// function makeOptions(): ChartOptions {
-//   const type = chartConfig.value.type;
-
-//   // theme colors resolved from CSS vars (plain strings)
-//   const grid = withAlpha(cssVarToRGB("--bc"), 0.2);
-//   const ticks = cssVarToRGB("--bc");
-//   const neutralBG = themeColor("neutral", 0.95);
-//   const borderColor = cssVarToRGB("--bc");
-//   const titleColor = themeColor("neutralContent");
-//   const bodyColor = themeColor("neutralContent");
-
-//   const base: ChartOptions = {
-//     responsive: true,
-//     maintainAspectRatio: false,
-//     animation: { duration: 250 },
-//     plugins: {
-//       legend: {
-//         display: true,
-//         labels: { usePointStyle: type !== "bar", color: ticks },
-//       },
-//       tooltip: {
-//         backgroundColor: neutralBG,
-//         borderColor,
-//         borderWidth: 1,
-//         titleColor,
-//         bodyColor,
-//         callbacks: {
-//           title: (items) => {
-//             if (!items?.length) return "";
-//             if (type === "bubble") {
-//               const labels = (chartData.value as any).labels as
-//                 | string[]
-//                 | undefined;
-//               const xi = (items[0].raw as any)?.x ?? 0;
-//               return labels?.[xi] ?? "";
-//             }
-//             return items[0].label ?? "";
-//           },
-//           label: (ctx) => {
-//             if (type === "pie" || type === "doughnut") {
-//               const label = ctx.label || "";
-//               const val = Array.isArray(ctx.parsed)
-//                 ? ctx.parsed[0]
-//                 : (ctx.parsed as number);
-//               return `${label}: ${currencyFmt(val || 0)}`;
-//             }
-//             if (type === "bubble") {
-//               const labels = (chartData.value as any).labels as
-//                 | string[]
-//                 | undefined;
-//               const yCats = (chartData.value as any).yCats as
-//                 | string[]
-//                 | undefined;
-//               const raw = ctx.raw as any; // { x, y, r, amt }
-//               const xi = raw?.x ?? 0;
-//               const yi = raw?.y ?? 0;
-//               return `${yCats?.[yi] ?? ""}: ${currencyFmt(raw?.amt || 0)} @ ${
-//                 labels?.[xi] ?? ""
-//               }`;
-//             }
-//             const label = ctx.dataset?.label || "";
-//             const y = (ctx.parsed as any)?.y ?? 0;
-//             return `${label}: ${currencyFmt(Number(y))}`;
-//           },
-//         },
-//       },
-//       // backgroundColor on root is fine, but optional:
-//       // decors: we can skip setting chart.options.backgroundColor to avoid touching proxies
-//     },
-//   };
-
-//   if (type === "line" || type === "bar") {
-//     const [min, max] = yExtent();
-//     base.scales = {
-//       x: {
-//         type: "category",
-//         ticks: { autoSkip: true, maxRotation: 0, color: ticks },
-//         grid: { color: grid, borderColor: grid },
-//       },
-//       y: {
-//         type: "linear",
-//         suggestedMin: min,
-//         suggestedMax: max,
-//         ticks: { callback: (v) => currencyFmt(Number(v)), color: ticks },
-//         grid: { color: grid, borderColor: grid },
-//       },
-//     };
-//   } else if (type === "bubble") {
-//     const yCats = (chartData.value as any).yCats as string[] | undefined;
-//     base.scales = {
-//       x: {
-//         type: "category",
-//         ticks: {
-//           callback: (_: any, i: number) =>
-//             (chartData.value as any).labels?.[i] ?? "",
-//           maxRotation: 0,
-//           autoSkip: true,
-//           color: ticks,
-//         },
-//         grid: { color: grid, borderColor: grid },
-//       },
-//       y: {
-//         type: "category",
-//         ticks: {
-//           autoSkip: false,
-//           callback: (_: any, i: number) => yCats?.[i] ?? "",
-//           color: ticks,
-//         },
-//         grid: { color: grid, borderColor: grid },
-//       },
-//     };
-//   }
-
-//   return base;
-// }
-
-function makeData(type: ChartType): ChartData {
-  if (type === "pie" || type === "doughnut") {
-    const cd: any = chartData.value;
-    const labels = cd.labels || [];
-    const data = cd.datasets?.[0]?.data || [];
-    // Unified category color mapping: same category = same color across ALL chart types
-    const colors = labels.map((cat: string) => getCategoryColor(cat));
-    return {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: colors,
-          borderColor: themeColor("base1"),
-          borderWidth: 1,
-        },
-      ],
-    };
-  }
-
-  if (type === "bubble") {
-    const cd: any = chartData.value;
-    const base = themeColor("primary");
-    return {
-      labels: cd.labels,
-      datasets: [
-        {
-          label: "Spending (bubble size)",
-          data: cd.datasets?.[0]?.data || [],
-          parsing: { xAxisKey: "x", yAxisKey: "y" },
-          borderColor: withAlpha(base, 1),
-          backgroundColor: withAlpha(base, 0.7),
-          radius: (ctx: ScriptableContext<"bubble">) => {
-            const r = Number((ctx.raw as any)?.r ?? 3);
-            return Math.max(3, Math.min(24, r));
-          },
-        },
-      ],
-    };
-  }
-
-  // line / bar
-  const cd: any = chartData.value;
-  return {
-    labels: cd.labels,
-    datasets: (cd.datasets || []).map((d: any, i: number) => {
-      const palette = themePalette(8);
-      const name = String(d.label || "").toLowerCase();
-      const base = name.includes("income")
-        ? themeColor("success")
-        : name.includes("spend")
-          ? themeColor("error")
-          : name.includes("balance")
-            ? themeColor("primary")
-            : palette[i % palette.length];
-
-      return {
-        ...d,
-        type,
-        borderWidth: type === "bar" ? 0 : 2,
-        tension: type === "line" ? 0.25 : 0,
-        pointRadius: type === "line" ? 2 : 0,
-        borderColor: withAlpha(base, 1),
-        backgroundColor: withAlpha(base, type === "line" ? 0.12 : 0.8),
-      };
-    }),
-  };
-}
-
-// function makeData(type: ChartType): ChartData {
-//   if (type === "pie" || type === "doughnut") {
-//     const cd: any = chartData.value;
-//     const labels = cd.labels || [];
-//     const data = cd.datasets?.[0]?.data || [];
-//     const colors = themePalette(labels.length || 6);
-//     return {
-//       labels,
-//       datasets: [
-//         {
-//           data,
-//           backgroundColor: colors,
-//           borderColor: themeColor("base1"),
-//           borderWidth: 1,
-//         },
-//       ],
-//     };
-//   }
-
-//   if (type === "bubble") {
-//     const cd: any = chartData.value;
-//     const base = themeColor("primary");
-//     return {
-//       labels: cd.labels,
-//       datasets: [
-//         {
-//           label: "Spending (bubble size)",
-//           data: cd.datasets?.[0]?.data || [],
-//           parsing: { xAxisKey: "x", yAxisKey: "y" },
-//           borderColor: withAlpha(base, 1),
-//           backgroundColor: withAlpha(base, 0.7),
-//           radius: (ctx: ScriptableContext<"bubble">) => {
-//             const r = Number((ctx.raw as any)?.r ?? 3);
-//             return Math.max(3, Math.min(24, r));
-//           },
-//         },
-//       ],
-//     };
-//   }
-
-//   // line / bar
-//   const cd: any = chartData.value;
-//   return {
-//     labels: cd.labels,
-//     datasets: (cd.datasets || []).map((d: any, i: number) => {
-//       const palette = themePalette(8);
-//       const name = String(d.label || "").toLowerCase();
-//       const base = name.includes("income")
-//         ? themeColor("success")
-//         : name.includes("spend")
-//         ? themeColor("error")
-//         : name.includes("balance")
-//         ? themeColor("primary")
-//         : palette[i % palette.length];
-
-//       return {
-//         ...d,
-//         type,
-//         borderWidth: type === "bar" ? 0 : 2,
-//         tension: type === "line" ? 0.25 : 0,
-//         pointRadius: type === "line" ? 2 : 0,
-//         borderColor: withAlpha(base, 1),
-//         backgroundColor: withAlpha(base, type === "line" ? 0.12 : 0.8),
-//       };
-//     }),
-//   };
-// }
 
 function applyDatePreset(p: { label: string; start: string; end: string }) {
   selectedDatePreset.value = p.label;
@@ -3228,18 +2848,8 @@ function formatDateRange() {
   return `${formatDate(start)} → ${formatDate(end)}`;
 }
 
-function toggleCategory(cat: string) {
-  const i = selectedCategories.value.findIndex((c) => eqi(c, cat));
-  if (i >= 0) selectedCategories.value.splice(i, 1);
-  else selectedCategories.value.push(cat);
-  selectedCategories.value = sortAlpha(dedupeCI(selectedCategories.value));
-}
-function selectAllCategories() {
-  selectedCategories.value = chartCategories.value.slice();
-}
-function unselectAllCategories() {
-  selectedCategories.value = [];
-}
+// Category selection for the chart uses the *ForChart helpers below; the
+// plain toggleCategory/selectAllCategories pair was superseded and removed.
 
 // Chart tag selection helpers
 function toggleTagForChart(tag: string) {
@@ -3247,10 +2857,6 @@ function toggleTagForChart(tag: string) {
   if (i >= 0) selectedTagsChart.value.splice(i, 1);
   else selectedTagsChart.value.push(tag);
   selectedTagsChart.value = sortAlpha(dedupeCI(selectedTagsChart.value));
-}
-
-function selectAllTagsForChart() {
-  selectedTagsChart.value = chartTags.value.slice();
 }
 
 function selectAllAvailableTagsForChart() {

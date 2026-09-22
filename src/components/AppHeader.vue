@@ -29,7 +29,8 @@
       <div class="tabs tabs-boxed gap-1" role="tablist" aria-label="Main sections">
         <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :id="`tab-${tab.id}`"
           class="tab focus-ring target-min px-4 md:px-5 touch-manip btn-ghost" :class="{ 'tab-active': activeTab === tab.id }"
-          @click="$emit('tab', tab.id)" :aria-selected="activeTab === tab.id" :aria-controls="`panel-${tab.id}`"
+          @click="$emit('tab', tab.id)" :aria-selected="activeTab === tab.id"
+          :aria-controls="tourOpen ? undefined : `panel-${tab.id}`"
           :aria-current="activeTab === tab.id ? 'page' : undefined">
           <span aria-hidden="true" class="text-base">{{ tab.icon }}</span>
           <span class="ml-1.5 text-sm font-medium">{{ tab.label }}</span>
@@ -144,12 +145,16 @@ withDefaults(
     securityBusy?: boolean;
     /** Stay-unlocked mode (only meaningful when protection is on). */
     stayUnlockedMode?: "off" | "session" | "device";
+    /** Onboarding tour overlay is open — no tab panels are mounted, so
+     *  aria-controls would dangle (axe: critical aria-valid-attr-value). */
+    tourOpen?: boolean;
   }>(),
   {
     securityAvailable: false,
     passwordProtectionEnabled: false,
     securityBusy: false,
     stayUnlockedMode: "off",
+    tourOpen: false,
   }
 );
 

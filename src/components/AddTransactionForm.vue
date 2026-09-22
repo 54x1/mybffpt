@@ -322,7 +322,8 @@
               </div>
 
               <!-- Manager Modal -->
-              <dialog ref="managerRef" class="modal modal-bottom sm:modal-middle">
+              <dialog ref="managerRef" class="modal modal-bottom sm:modal-middle" aria-modal="true"
+                aria-labelledby="managerHeading">
                 <div class="modal-box p-0 max-w-[48rem] max-h-[90vh] flex flex-col">
                   <!-- Sticky header with drag handle for mobile -->
                   <div class="p-4 border-b border-base-300 bg-base-200 sticky top-0 z-10">
@@ -340,7 +341,7 @@
                         </svg>
                       </div>
                       <div class="flex-1">
-                        <h3 class="font-bold text-lg">
+                        <h3 id="managerHeading" class="font-bold text-lg">
                           Manage
                           {{
                             managerType === "category" ? "Categories" : "Tags"
@@ -531,7 +532,8 @@
               </dialog>
 
               <!-- Rename Confirmation Modal -->
-              <dialog ref="renameConfirmRef" class="modal modal-middle">
+              <dialog ref="renameConfirmRef" class="modal modal-middle" aria-modal="true"
+                aria-labelledby="renameConfirmHeading">
                 <div class="modal-box max-w-md">
                   <div class="flex items-start gap-3">
                     <div class="p-2 rounded-lg bg-info/10 shrink-0">
@@ -541,7 +543,7 @@
                       </svg>
                     </div>
                     <div class="flex-1">
-                      <h3 class="font-bold text-lg">
+                      <h3 id="renameConfirmHeading" class="font-bold text-lg">
                         Update {{ managerType }} References?
                       </h3>
                       <p class="text-sm opacity-70 mt-2">
@@ -856,6 +858,7 @@ import { addDaysIso, advanceFrequency, todayLocalISO } from "../utils/dates";
 import { norm, eqi, sortAlpha, dedupeCI } from "../utils/text";
 import { useToasts } from "../composables/useToasts";
 import { useDateFormat } from "../composables/useDateFormat";
+import { useDialogA11y } from "../composables/useDialogA11y";
 
 type ManagerType = "category" | "tag";
 
@@ -1447,6 +1450,9 @@ const managerRef = ref<HTMLDialogElement | null>(null);
 const managerSearchRef = ref<HTMLInputElement | null>(null);
 const managerAddRef = ref<HTMLInputElement | null>(null);
 const managerNewName = ref("");
+// Focus-return-to-trigger for the two dialogs below (native <dialog> covers
+// trapping/Escape/top-layer; this adds restoring focus to the opener).
+const { openDialog: openManagerDialog } = useDialogA11y(managerRef);
 
 function openManager(kind: ManagerType) {
   emit("open-manager", kind);
@@ -1456,7 +1462,7 @@ function openManager(kind: ManagerType) {
   renameValue.value = "";
 
   nextTick(() => {
-    managerRef.value?.showModal?.();
+    openManagerDialog();
     managerAddRef.value?.focus();
     // The dialog was closed (zero layout box) when virtViewportH was first
     // measured in onMounted, so it was stuck at 0 — re-measure now that the
@@ -1491,6 +1497,7 @@ const renameInputRef = ref<HTMLInputElement | null>(null);
 const renameTarget = ref<string | null>(null);
 const renameValue = ref("");
 const renameConfirmRef = ref<HTMLDialogElement | null>(null);
+const { openDialog: openRenameConfirmDialog } = useDialogA11y(renameConfirmRef);
 const updateCount = ref(0);
 
 function startRename(name: string) {
@@ -1512,7 +1519,7 @@ function confirmRename() {
   updateCount.value = affectedCount;
 
   if (affectedCount > 0) {
-    renameConfirmRef.value?.showModal?.();
+    openRenameConfirmDialog();
   } else {
     emit("apply-rename", { oldName, newName, count: 0 });
     cancelRename();

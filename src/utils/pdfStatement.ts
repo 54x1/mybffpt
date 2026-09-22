@@ -96,7 +96,7 @@ export interface PdfColumnDetection {
  * Yearless day+month is captured too (year filled from {@link YearHint}).
  */
 const DATE_START_RE =
-  /^\s*(?:(\d{1,2}):(\d{2})\s+)?(\d{1,2})[\/\-. ]([A-Za-z]{3}|\d{1,2})[\/\-. ](?:(\d{4}|\d{2})\b)?/;
+  /^\s*(?:(\d{1,2}):(\d{2})\s+)?(\d{1,2})[/.\- ]([A-Za-z]{3}|\d{1,2})[/.\- ](?:(\d{4}|\d{2})\b)?/;
 
 /** A whole cell that is just an amount: `$1,234.56`, `(99.00)`, `12.34 CR`, `-5`. */
 const AMOUNT_CELL_RE =
@@ -246,7 +246,7 @@ export function matchAmountCell(cell: string): number | null {
   let sign = 1;
   if (openParen) sign *= -1; // (99.00) → negative
   if (leadSign === "-") sign *= -1;
-  if (/\-\s*$/.test(t)) sign *= -1; // trailing minus "12.34-"
+  if (/-\s*$/.test(t)) sign *= -1; // trailing minus "12.34-"
   if (crdr) {
     const c = crdr.toUpperCase();
     // In statements, CR on a purchase column means money out of the account

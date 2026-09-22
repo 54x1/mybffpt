@@ -268,7 +268,7 @@
       </div>
       <!-- Mobile Card View -->
       <div class="lg:hidden space-y-3">
-        <div v-for="(t, i) in paginatedTransactions" :key="t.id" :id="`tx-${t.id}`"
+        <div v-for="t in paginatedTransactions" :key="t.id" :id="`tx-${t.id}`"
           class="card bg-base-100 shadow-sm border border-base-300 tx-card-mobile"
           :class="{ 'border-primary': isSelected(t.id), 'bg-base-200': isSelected(t.id) }">
           <div class="card-body p-3 gap-2">
@@ -393,7 +393,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(t, i) in paginatedTransactions" :key="t.id" :id="`tx-${t.id}`"
+              <tr v-for="t in paginatedTransactions" :key="t.id" :id="`tx-${t.id}`"
                 :aria-selected="isSelected(t.id) ? 'true' : 'false'"
                 :class="{ 'bg-base-200': isSelected(t.id) }">
                 <td>

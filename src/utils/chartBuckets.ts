@@ -38,7 +38,7 @@ function parseDateGuess(value: string | undefined | null): string {
   const isoMatch = text.match(/^(\d{4}-\d{2}-\d{2})(?:[ T].*)?$/);
   if (isoMatch) return isoMatch[1];
 
-  const dmYMatch = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:[ T].*)?$/);
+  const dmYMatch = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:[ T].*)?$/);
   if (dmYMatch) {
     const d = String(dmYMatch[1]).padStart(2, "0");
     const m = String(dmYMatch[2]).padStart(2, "0");

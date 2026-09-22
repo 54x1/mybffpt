@@ -96,10 +96,16 @@ export function parseAmountNumber(
     s = s.slice(0, -1);
   }
 
-  // Strip currency symbols, spaces, and commas
-  s = s.replace(/[^\d.-]/g, "").replace(/,/g, "");
-  if (/^\d{1,3}(\.\d{3})+,\d{2}$/.test(s)) {
-    s = s.replace(/\./g, "").replace(",", ".");
+  // Detect European decimal-comma ("1.234,56") BEFORE separators are
+  // stripped — once commas are gone the pattern is unrecognisable and the
+  // amount silently parses as 1.23456 instead of 1234.56.
+  const t = s.replace(/[^\d.,-]/g, ""); // keep digits, dots, commas, minus
+  if (/^-?\d{1,3}(?:\.\d{3})+,\d{2}$/.test(t)) {
+    // Dots are thousands separators, comma is the decimal point
+    s = t.replace(/\./g, "").replace(",", ".");
+  } else {
+    // AU/US style: commas are thousands separators ("$1,234.56")
+    s = t.replace(/,/g, "");
   }
   const n = Number(s);
   if (!isFinite(n)) {
@@ -211,8 +217,10 @@ export function rowToTransaction(
   const dateISO = parseDateGuess(row[cols.date]);
   if (!dateISO) return null;
 
-  let signed = 0;
-  let description = "";
+  // Assigned by exactly one import path below; each path either assigns both
+  // or returns null, so no initial value is ever read.
+  let signed: number;
+  let description: string;
 
   // ── Path A: Wise Mobile ──
   if (cols.mobileId != null) {

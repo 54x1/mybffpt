@@ -135,7 +135,7 @@
     <AppHeader :tabs="tabs" :active-tab="activeTab" :net-balance-formatted="netBalanceFormatted"
       :show-lock="storeMode === 'ready' && passwordProtectionEnabled"
       :security-available="isSecureContextAvailable()" :password-protection-enabled="passwordProtectionEnabled"
-      :security-busy="securityBusy" :stay-unlocked-mode="stayUnlockedMode" @home="goHome" @tab="onTab"
+      :security-busy="securityBusy" :stay-unlocked-mode="stayUnlockedMode" :tour-open="showTour" @home="goHome" @tab="onTab"
       @lock="handleLock" @toggle-protection="handleToggleProtection"
       @change-stay-unlocked-mode="onStayUnlockedModeChange" />
 
@@ -295,7 +295,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import DatePicker from './components/DatePicker.vue';
 import MobileNav from './components/MobileNav.vue';
 import AboutSection from './components/AboutSection.vue';
 import AppHeader from './components/AppHeader.vue';
@@ -326,27 +325,18 @@ import {
   nextTick,
   shallowRef,
 } from "vue";
-import { buildTimeSeriesBuckets, type ChartGroupBy } from "./utils/chartBuckets";
 import type {
   Transaction,
   TransactionType,
   RecurringFrequency,
-  ToastKind,
   DescMode,
-  InferredCols,
   ParsedQuery,
 } from "./utils/types";
 import {
   LS_KEYS,
-  DEFAULT_CATEGORIES,
-  VIBRANT_COLORS,
-  VIBRANT_BORDERS,
-  INCOME_COLOR,
-  SPENDING_COLOR,
-  BALANCE_COLOR,
   MIN_MASTER_PASSWORD_LENGTH,
 } from "./utils/constants";
-import { DEBUG_IMPORT, dbg, dbgw, dbge, dbgg, dbgge, sample } from "./utils/debug";
+import { dbg, dbgg, dbgge, sample } from "./utils/debug";
 import {
   isString,
   norm,
@@ -395,22 +385,10 @@ import {
   toLocalISO,
   todayLocalISO,
   isoToDDMMYYYY,
-  ddmmyyyyToISO,
-  formatDDMMProgressive,
-  finalizeDDMM,
-  parseDateGuess,
-  endOfMonthISO,
-  toISOorEmpty,
-  startOfISOWeek,
-  startOfFortnight,
-  startOfQuarter,
-  bucketKeyByGroup,
 } from "./utils/dates";
 import { autoCategoryFor, autoTagsFor, autoMergeTags } from "./utils/rules";
 import {
   parseCSV,
-  findIndexByKeywords,
-  parseAmountNumber,
   inferColumns,
   scanAmountConvention,
   rowToTransaction,
@@ -428,38 +406,14 @@ import {
   encryptFileContent,
   decryptFileContent,
 } from "./utils/share";
-import {
-  DEFAULT_SOURCE,
-  validateTransactionSchema,
-  normalizeTransaction,
-} from "./utils/transactions";
+import { normalizeTransaction } from "./utils/transactions";
 import { useToasts } from "./composables/useToasts";
-import { useDateFormat } from "./composables/useDateFormat";
 import { useTheme } from "./composables/useTheme";
-import {
-  type Token,
-  TOKEN_VAR,
-  cssVarToRGB,
-  withAlpha,
-  themeColor,
-  invalidateColorCaches,
-  themePalette,
-  normalizeChartLabel,
-  hashChartLabel,
-  hslToRgb,
-  getCategoryPaletteIndex,
-  stableLabelColor,
-  getCategoryColor,
-  formatChartTooltipTitle,
-  resolveTooltipColor,
-  shiftHue,
-} from "./utils/themeColors";
 
 // Shared app-wide state via composables (Vue 3 simple-store pattern)
 const { toasts, pushToast, dismissToast } = useToasts();
 const chartsSectionRef = ref<any>(null);
-const { formatDate } = useDateFormat();
-const { currentTheme, themeVersion } = useTheme();
+const { currentTheme } = useTheme();
 
 Chart.register(LineController, BarController, PieController, DoughnutController, RadarController, ScatterController, CategoryScale, LinearScale, RadialLinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler);
 
@@ -969,7 +923,7 @@ const dismissTips = () => {
   showTips.value = false;
   localStorage.setItem(LS_KEYS.tips, "true");
 };
-const version = ref("v1.0");
+const version = ref("v2026.09.1");
 
 // Transaction form
 const newTransaction = reactive<Transaction>({
@@ -1023,7 +977,7 @@ watch(
 // Auto-add tags whenever category/description indicate a known merchant
 watch(
   [() => newTransaction.category, () => newTransaction.description],
-  ([cat, desc], [prevCat, prevDesc]) => {
+  ([cat, desc]) => {
     if (!cat || !desc) return;
     const detected = autoTagsFor(desc, cat);
     if (!detected.length) return;
@@ -1087,9 +1041,7 @@ watch(similarTransactions, (list) => {
 });
 
 // Date input handling
-const addDateTextRef = ref<HTMLInputElement | null>(null);
 const newTxDateError = ref("");
-const addDatePickerRef = ref<HTMLInputElement | null>(null);
 const newTxDateText = ref(isoToDDMMYYYY(newTransaction.date));
 
 // Amount validation
@@ -1106,16 +1058,6 @@ const newTxDateISO = computed<string>({
 
 // ========= Universal Date Picker (iOS/Android/Desktop-safe) =========
 
-// Calendar
-const addCalOpen = ref(false);
-const calViewMonthISO = ref('');
-// const newTxDateISO = ref('');
-// const newTxDateError = ref('');
-// const todayISO = computed(() => toLocalISO(new Date()));
-// const addDateTextRef = ref<HTMLInputElement | null>(null);
-// const addDatePickerRef = ref<HTMLInputElement | null>(null);
-// const amountInputRef = ref<HTMLInputElement | null>(null);
-// const addSectionRef = ref<HTMLElement | null>(null);
 const hiddenCategories = ref<string[]>([]);
 
 // in loadPersistedState()
@@ -1135,79 +1077,6 @@ function isDefaultCategory(name: string) {
 function isHiddenCategory(name: string) {
   return hiddenCategories.value.some((c) => eqi(c, name));
 }
-
-watch(newTxDateISO, (v) => {
-  if (v) calViewMonthISO.value = v.slice(0, 7) + "-01";
-});
-
-function startOfMonthISO(iso: string): string {
-  const [y, m] = iso.split("-").map(Number);
-  return toLocalISO(new Date(y, m - 1, 1));
-}
-function startOfCalendarGrid(isoFirstOfMonth: string): string {
-  const dt = new Date(isoFirstOfMonth);
-  const dow = dt.getDay(); // Sun=0..Sat=6
-  dt.setDate(1 - dow);
-  return toLocalISO(dt);
-}
-function daysInMonthGrid(
-  isoFirstOfMonth: string
-): { iso: string; inMonth: boolean; isToday: boolean }[] {
-  const first = new Date(isoFirstOfMonth);
-  const month = first.getMonth();
-  const gridStartISO = startOfCalendarGrid(isoFirstOfMonth);
-  const cells: { iso: string; inMonth: boolean; isToday: boolean }[] = [];
-  let cursor = new Date(gridStartISO);
-  const todayISO = todayLocalISO();
-  for (let i = 0; i < 42; i++) {
-    const iso = toLocalISO(cursor);
-    cells.push({
-      iso,
-      inMonth: cursor.getMonth() === month,
-      isToday: iso === todayISO,
-    });
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return cells;
-}
-const calCells = computed(() =>
-  daysInMonthGrid(startOfMonthISO(calViewMonthISO.value))
-);
-
-function openAddCalendar() {
-  calViewMonthISO.value = newTxDateISO.value
-    ? startOfMonthISO(newTxDateISO.value)
-    : startOfMonthISO(todayLocalISO());
-  addCalOpen.value = true;
-}
-function closeAddCalendar() {
-  addCalOpen.value = false;
-}
-function calPrevMonth() {
-  calViewMonthISO.value = addMonthsClamped(
-    startOfMonthISO(calViewMonthISO.value),
-    -1
-  );
-}
-function calNextMonth() {
-  calViewMonthISO.value = addMonthsClamped(
-    startOfMonthISO(calViewMonthISO.value),
-    1
-  );
-}
-function pickCalDate(iso: string) {
-  newTxDateISO.value = iso;
-  newTxDateText.value = isoToDDMMYYYY(iso);
-  newTxDateError.value = "";
-  addDateTextRef.value?.setCustomValidity?.("");
-  addCalOpen.value = false;
-}
-function clearCalDate() {
-  newTxDateISO.value = "";
-  newTxDateText.value = "";
-  addCalOpen.value = false;
-}
-
 
 watch(newTxDateISO, (iso) => (newTxDateText.value = isoToDDMMYYYY(iso) || ""));
 
@@ -1266,7 +1135,7 @@ function extractCategoriesFromTransactions() {
 }
 
 const allCategories = computed(() => {
-  categorySetVersion.value; // reactive dependency — see touchCategorySet
+  void categorySetVersion.value; // reactive dependency — see touchCategorySet
   return Array.from(categorySet)
     .filter((c) => !isHiddenCategory(c))
     .sort((a, b) => a.localeCompare(b));
@@ -1274,20 +1143,6 @@ const allCategories = computed(() => {
 
 // Last selected category for pre-fill
 const lastSelectedCategory = ref<string>("");
-
-// Category combobox
-const open = ref(false);
-const query = ref("");
-const activeIndex = ref<number>(0);
-const ids = {
-  input: `cat-cbx-${Math.random().toString(36).slice(2)}`,
-  listbox: `cat-lb-${Math.random().toString(36).slice(2)}`,
-  heading: `catmgr-h-${Math.random().toString(36).slice(2)}`,
-  tagList: `tag-lb-${Math.random().toString(36).slice(2)}`,
-};
-// Tag input
-const tagInput = ref("");
-const openTagSuggest = ref(false);
 
 // Modals
 const showManager = ref(false);
@@ -1335,7 +1190,6 @@ const bulkEdit = reactive({
 const showAdvancedTransactionsView = ref(false);
 const searchQuery = ref('');
 const typeFilter = ref<TransactionType | ''>('');
-const sourceFilter = ref('');
 const sortField = ref<'date' | 'type' | 'amount' | 'category' | 'description'>('date');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 const currentPage = ref(1);
@@ -1626,8 +1480,6 @@ const MAX_SHARE_IMPORT_TX = MAX_SHARE_TX * MAX_SHARE_BATCHES;
 // ========= page UX helpers (focus  scroll) =========
 // The add-form section + amount input live in AddTransactionForm.vue and are
 // reached through its exposed instance refs.
-const tagInputElRef = ref<HTMLInputElement | null>(null);
-
 function scrollAddIntoView() {
   nextTick(() => {
     addFormRef.value?.addSectionRef?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1635,9 +1487,6 @@ function scrollAddIntoView() {
 }
 function focusAmount() {
   nextTick(() => addFormRef.value?.amountInputRef?.focus());
-}
-function focusTags() {
-  nextTick(() => tagInputElRef.value?.focus());
 }
 
 
@@ -1689,40 +1538,6 @@ function getListRef() {
 function existsInManager(name: string) {
   const n = norm(name);
   return getListRef().value.some((x) => norm(x) === n);
-}
-function addToList(name: string) {
-  const listRef = getListRef();
-  if (!existsInManager(name)) {
-    listRef.value = sortAlpha(dedupeCI([...listRef.value, name.trim()]));
-    safeLocalStorageSet(LS_KEYS.cats, customCategories.value);
-    safeLocalStorageSet(LS_KEYS.tags, tags.value);
-  }
-}
-function removeFromList(name: string) {
-  const listRef = getListRef();
-  const n = norm(name);
-  listRef.value = listRef.value.filter((x) => norm(x) !== n);
-
-  if (managerType.value === "category") {
-    // If current selection shows the removed category, clear it
-    if (eqi(currentCategory.value || "", name)) currentCategory.value = "";
-    // Reassign existing transactions to a safe default
-    transactions.value = transactions.value.map((t) =>
-      eqi(t.category, name) ? { ...t, category: "Uncategorized" } : t
-    );
-  } else {
-    // Remove tag from any selected chips
-    selectedTags.value = selectedTags.value.filter((t) => !eqi(t, name));
-    // Strip the tag from all transactions
-    transactions.value = transactions.value.map((t) => ({
-      ...t,
-      tags: t.tags.filter((tt) => !eqi(tt, name)),
-    }));
-  }
-
-  safeLocalStorageSet(LS_KEYS.cats, customCategories.value);
-  safeLocalStorageSet(LS_KEYS.tags, tags.value);
-  pushToast(`Deleted ${managerType.value} “${name}”`, "success");
 }
 
 watch(showAdvancedTransactionsView, (v) => {
@@ -1781,7 +1596,7 @@ watch(
 rebuildCategorySet();
 
 const managerItems = computed<string[]>(() => {
-  _categorySetVersion.value; // reactive dependency — see rebuildCategorySet
+  void _categorySetVersion.value; // reactive dependency — see rebuildCategorySet
   // Build the source list from cached set
   let src: string[];
   if (managerType.value === "category") {
@@ -1911,30 +1726,10 @@ const tabs = computed(() => {
 
 // OPTIMIZED: Use pre-computed categorySet instead of re-extracting from all transactions
 const categories = computed(() => {
-  categorySetVersion.value; // reactive dependency — see touchCategorySet
+  void categorySetVersion.value; // reactive dependency — see touchCategorySet
   return Array.from(categorySet)
     .filter((c) => !isHiddenCategory(c))
     .sort((a, b) => a.localeCompare(b));
-});
-
-const trimmedQuery = computed(() => norm(query.value));
-const filteredAllCategories = computed(() => {
-  const q = trimmedQuery.value.toLowerCase();
-  if (!q) return allCategories.value;
-  return allCategories.value.filter((c) => c.toLowerCase().includes(q));
-});
-const showCreateOption = computed(() => {
-  const q = trimmedQuery.value;
-  return q.length > 0 && !containsCaseIns(allCategories.value, q);
-});
-const optionId = (i: number) => `${ids.listbox}-opt-${i}`;
-const activeId = computed(() => optionId(activeIndex.value));
-
-const tagSuggestionsForInput = computed(() => {
-  const q = norm(tagInput.value).toLowerCase();
-  const pool = tags.value.filter((t) => !newTransaction.tags.includes(t));
-  if (!q) return pool.slice(0, 8);
-  return pool.filter((t) => t.toLowerCase().includes(q)).slice(0, 8);
 });
 
 const derivedEndDateISO = computed(() => {
@@ -2196,9 +1991,6 @@ const activeAmountFilter = computed(() => {
 const selectedCount = computed(() => selectedIds.value.size);
 const selectedTransactions = computed(() =>
   transactions.value.filter((t) => selectedIds.value.has(t.id))
-);
-const someSelectedOnPage = computed(() =>
-  paginatedTransactions.value.some((t) => selectedIds.value.has(t.id))
 );
 const allSelected = computed(
   () =>
@@ -2524,28 +2316,6 @@ async function generateShareCodesWithBatching() {
 
 
 
-// Date presets
-const datePresets = [
-  { label: "All Time", start: "", end: "" },
-  {
-    label: "Last 30d",
-    start: toLocalISO(new Date(new Date().setDate(new Date().getDate() - 29))),
-    end: todayLocalISO(),
-  },
-  {
-    label: "This Month",
-    start: toLocalISO(
-      new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-    ),
-    end: todayLocalISO(),
-  },
-  {
-    label: "This Year",
-    start: `${new Date().getFullYear()}-01-01`,
-    end: todayLocalISO(),
-  },
-];
-
 // ========== METHODS ==========
 
 
@@ -2572,70 +2342,6 @@ function onTab(id: string) {
   }, 100);
 }
 
-// Date input handlers
-function onAddDateInput(e: Event) {
-  // Clear error as user types
-  newTxDateError.value = "";
-
-  const input = e.target as HTMLInputElement;
-  const oldValue = input.value;
-
-  // Get cursor position BEFORE updating value
-  let cursorPos = input.selectionStart ?? oldValue.length;
-
-  // Format the date
-  const formattedValue = formatDDMMProgressive(oldValue);
-
-  // Count how many dashes were added before the cursor
-  const oldDashesBeforeCursor = (oldValue.slice(0, cursorPos).match(/-/g) || []).length;
-  const newDashesBeforeCursor = (formattedValue.slice(0, cursorPos).match(/-/g) || []).length;
-
-  // Adjust cursor position based on dashes added/removed before cursor
-  const adjustedCursorPos = cursorPos + (newDashesBeforeCursor - oldDashesBeforeCursor);
-
-  // Update value
-  input.value = formattedValue;
-  newTxDateText.value = formattedValue;
-
-  // Restore cursor position - use nextTick for reliability
-  nextTick(() => {
-    if (input === document.activeElement) {
-      input.setSelectionRange(adjustedCursorPos, adjustedCursorPos);
-    }
-  });
-
-  addDateTextRef.value?.setCustomValidity?.("");
-}
-
-function onAddDateBlur() {
-  const ddmmyyyy = finalizeDDMM(newTxDateText.value);
-
-  if (!ddmmyyyy) {
-    // Empty is okay - not required until submit
-    newTxDateError.value = "";
-    addDateTextRef.value?.setCustomValidity?.("");
-    return;
-  }
-
-  const iso = ddmmyyyyToISO(ddmmyyyy);
-  if (iso) {
-    newTxDateText.value = ddmmyyyy;
-    newTxDateISO.value = iso;
-    newTxDateError.value = "";
-    addDateTextRef.value?.setCustomValidity?.("");
-  } else {
-    newTxDateError.value = "Invalid date. Use dd-mm-yyyy (e.g. 05-01-2025).";
-    addDateTextRef.value?.setCustomValidity?.(newTxDateError.value);
-    addDateTextRef.value?.reportValidity?.();
-  }
-}
-
-function onDateKeydownDigitsOnly(e: KeyboardEvent) {
-  const ok = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "-"];
-  if (ok.includes(e.key)) return;
-  if (!/^\d$/.test(e.key)) e.preventDefault();
-}
-
 // Helper to scroll input into view when focused (handles mobile keyboard)
 // Clear amount error when user types
 function clearAmountError() {
@@ -2650,13 +2356,6 @@ function clearAmountError() {
 const tagPickerModalRef = ref<{ focusInput: () => void } | null>(null);
 
 // Open picker preselecting current tags
-function openTagPicker() {
-  tagPicker.q = "";
-  tagPicker.visible = 120;
-  tagPicker.selected = new Set<string>(newTransaction.tags || []);
-  tagPicker.open = true;
-  nextTick(() => tagPickerModalRef.value?.focusInput());
-}
 function closeTagPicker() {
   tagPicker.open = false;
 }
@@ -2771,57 +2470,8 @@ function addDays(iso: string, days: number): string {
   return toLocalISO(dt);
 }
 
-// Category combobox functions
-function handleInput() {
-  open.value = true;
-  activeIndex.value = showCreateOption.value ? -1 : 0;
-}
-
-function moveActive(dir: 1 | -1) {
-  const opts = filteredAllCategories.value.length;
-  if (showCreateOption.value) {
-    const order = [-1, ...Array.from({ length: opts }, (_, i) => i)];
-    const cur = order.indexOf(activeIndex.value);
-    const next = (cur + dir + order.length) % order.length;
-    activeIndex.value = order[next];
-  } else {
-    const next = (activeIndex.value + dir + opts) % Math.max(opts, 1);
-    activeIndex.value = next;
-  }
-}
-
-function handleEnter() {
-  if (activeIndex.value === -1 && showCreateOption.value) {
-    createCustomFromQuery();
-    return;
-  }
-  const choice = filteredAllCategories.value[activeIndex.value];
-  if (choice) selectCategory(choice);
-  else if (showCreateOption.value) createCustomFromQuery();
-}
-
-function closeDropdown() {
-  open.value = false;
-}
-
-// selectCategory backs the parent-only category combobox (handleEnter /
-// createCustomFromQuery). The Add form's combobox has its own selectCategory.
-function selectCategory(cat: string) {
-  currentCategory.value = cat;
-  closeDropdown();
-}
-
-function createCustomFromQuery() {
-  const name = trimmedQuery.value;
-  if (!name) return;
-  if (!containsCaseIns(customCategories.value, name)) {
-    customCategories.value = sortAlpha(
-      dedupeCI([...customCategories.value, name])
-    );
-  }
-  selectCategory(name);
-}
-
+// The Add form's combobox (AddTransactionForm.vue) owns its own open/search/
+// selection state; the parent keeps only rememberCategory for recents.
 function rememberCategory(cat: string) {
   const list = dedupeCI([cat, ...recentCategories.value]).slice(0, 6);
   recentCategories.value = list;
@@ -2832,34 +2482,7 @@ function rememberCategory(cat: string) {
   lastSelectedCategory.value = cat;
 }
 
-// Tag functions
-function commitTagInput() {
-  const bits = (tagInput.value || "")
-    .split(/[,\s]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  bits.forEach((b) => addTagToTransaction(b));
-  tagInput.value = "";
-  openTagSuggest.value = false;
-}
-
-function addTagToTransaction(name: string) {
-  const t = norm(String(name));
-  if (!t) return;
-
-  if (!containsCaseIns(tags.value, t)) {
-    tags.value = sortAlpha(dedupeCI([...tags.value, t]));
-  }
-
-  const canonical = tags.value.find((x) => eqi(x, t)) || t;
-  if (!newTransaction.tags.some((x) => eqi(x, canonical))) {
-    newTransaction.tags = [...newTransaction.tags, canonical];
-  }
-}
-
-function removeTagFromTransaction(name: string) {
-  newTransaction.tags = newTransaction.tags.filter((t) => !eqi(t, name));
-}
+// Tag functions live in AddTransactionForm.vue / TagPickerModal.vue.
 
 // Transaction CRUD operations
 function addTransaction() {
@@ -3352,10 +2975,6 @@ function calculateNextOccurrenceDate(
 }
 
 // Transaction selection
-function isSelected(id: string): boolean {
-  return selectedIds.value.has(id);
-}
-
 function toggleSelectRow(id: string) {
   const s = new Set(selectedIds.value);
   if (s.has(id)) s.delete(id);
@@ -3698,15 +3317,6 @@ function applyBulkEdit() {
 // );
 
 // Import/Export functions
-async function readFileAsText(file: File): Promise<string> {
-  return await new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onerror = () => reject(r.error);
-    r.onload = () => resolve(String(r.result || ""));
-    r.readAsText(file);
-  });
-}
-
 // Parses raw CSV text into normalized transactions. Shared by the plain-CSV
 // upload path and the encrypted-CSV import path so both use identical column
 // inference, headerless detection, and amount-convention scanning.
@@ -5107,24 +4717,8 @@ function rand(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
-function randInt(min: number, max: number): number {
-  return Math.floor(rand(min, max + 1));
-}
-
 function pickOne<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function weightedPick<T extends { weight?: number }>(items: T[]): T {
-  const total = items.reduce((sum, item) => sum + (item.weight ?? 1), 0);
-  let r = Math.random() * total;
-
-  for (const item of items) {
-    r -= item.weight ?? 1;
-    if (r <= 0) return item;
-  }
-
-  return items[items.length - 1];
 }
 
 // function formatDate(date: Date): string {
@@ -5199,60 +4793,6 @@ function generateRecurringSeries(
   return out;
 }
 
-
-function isBnplCategory(category?: string): boolean {
-  return eqi(category || "", "BNPL");
-}
-
-function stripInstallmentSuffix(text: string): string {
-  return (text || "")
-    .replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/i, "")
-    .trim();
-}
-
-function splitAmountIntoInstallments(total: number, count = 4): number[] {
-  const totalCents = Math.round(Math.abs(total) * 100);
-  const baseCents = Math.floor(totalCents / count);
-  const remainder = totalCents - baseCents * count;
-
-  return Array.from({ length: count }, (_, i) => {
-    const cents = i === count - 1 ? baseCents + remainder : baseCents;
-    return cents / 100;
-  });
-}
-
-function generateBnplInstallmentSeries(baseTx: Transaction): Transaction[] {
-  const installmentCount = 4;
-  const startISO =
-    /^\d{4}-\d{2}-\d{2}$/.test(baseTx.date) ? baseTx.date : todayLocalISO();
-
-  const installments = splitAmountIntoInstallments(baseTx.amount, installmentCount);
-  const baseDescription = stripInstallmentSuffix(baseTx.description || "BNPL Purchase");
-  const baseTags = sortAlpha(
-    dedupeCI([
-      ...(baseTx.tags || []),
-      "bnpl",
-      "installment",
-      "fortnightly",
-    ])
-  );
-
-  return installments.map((amount, index) => ({
-    ...baseTx,
-    id: `${baseTx.id}-bnpl-${index + 1}`,
-    date: addDays(startISO, index * 14),
-    amount,
-    category: "BNPL",
-    description: `${baseDescription} (${index + 1}/${installmentCount})`,
-    tags: sortAlpha(
-      dedupeCI([...baseTags, `${index + 1}-of-${installmentCount}`])
-    ),
-    recurring: false,
-    frequency: undefined,
-    recursions: 1,
-    endDate: "",
-  }));
-}
 
 function generateRandomDemoData(): Transaction[] {
   const startDate = new Date(DEMO_START_DATE);

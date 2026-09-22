@@ -70,7 +70,7 @@ export function parseDateGuess(s: string | undefined | null): string {
   if (mISO) return mISO[1]; // keep only the date part
 
   // dd/mm/yyyy or dd-mm-yyyy (optionally with time)
-  let m = t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:[ T].*)?$/);
+  let m = t.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:[ T].*)?$/);
   if (m) {
     const d = String(m[1]).padStart(2, "0");
     const mo = String(m[2]).padStart(2, "0");

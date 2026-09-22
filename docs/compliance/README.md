@@ -1,7 +1,8 @@
 # SOC 2 readiness pack
 
 **Status:** control design implemented in code, CI, and written policy as of
-**2026-09-08**. **Not yet audited.** A SOC 2 report is an opinion issued by an
+**2026-09-08**; re-audited **2026-09-21** ([`AUDIT_2026-09-21.md`](AUDIT_2026-09-21.md)).
+**Not yet audited.** A SOC 2 report is an opinion issued by an
 independent CPA firm; nothing in a repository can grant it.
 
 ## What SOC 2 Type 1 is

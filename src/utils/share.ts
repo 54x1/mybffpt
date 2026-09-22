@@ -129,7 +129,7 @@ export async function decryptShareData(password: string, encryptedBase64: string
     return JSON.parse(decoder.decode(decrypted));
   } catch (error) {
     devError("Decryption failed:", error);
-    throw new Error("Invalid password or corrupted data");
+    throw new Error("Invalid password or corrupted data", { cause: error });
   }
 }
 
@@ -242,6 +242,6 @@ export async function decryptFileContent(password: string, bytes: Uint8Array): P
     return new TextDecoder().decode(decrypted);
   } catch (error) {
     devError("File decryption failed:", error);
-    throw new Error("Invalid password or corrupted file");
+    throw new Error("Invalid password or corrupted file", { cause: error });
   }
 }

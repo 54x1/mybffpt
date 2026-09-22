@@ -48,7 +48,7 @@ function recordHiddenNow(): void {
 
 /** True when more time has passed since the tab was last hidden than the timeout allows. */
 export function hasExceededInactivityTimeout(): boolean {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = sessionStorage.getItem(LS_KEYS.lastHiddenAt);
   } catch {
