@@ -272,7 +272,8 @@ export function shiftHue(rgb: string, degrees: number): string {
 
   // RGB to HSL
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
 
   if (max !== min) {
     const d = max - min;
@@ -288,10 +289,10 @@ export function shiftHue(rgb: string, degrees: number): string {
   h = (h + degrees / 360) % 1;
   if (h < 0) h += 1;
 
-  // HSL to RGB
+  // HSL to RGB — wrap t into [0,1) in both directions (matches hue2rgb above;
+  // the previous code computed a positive-wrap value that was never read).
   const hue2rgb = (p: number, q: number, t: number) => {
-    let u = t < 0 ? t + 1 : t;
-    let v = u > 1 ? u - 1 : u;
+    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
     if (u < 1 / 6) return p + (q - p) * 6 * u;
     if (u < 1 / 2) return q;
     if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6;

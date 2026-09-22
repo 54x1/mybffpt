@@ -38,6 +38,8 @@ export interface Transaction {
   source?: string;
   /** Links all occurrences of one recurring series (the anchor's id). */
   seriesId?: string;
+  /** Links the parts created by one split (first part's id). */
+  splitGroupId?: string;
 }
 
 export type ToastKind = "success" | "info" | "warning" | "error";

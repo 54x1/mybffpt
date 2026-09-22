@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [2026.09.1] - 2026-09-22
+
 ### Security
 - Master password minimum length raised from 4 to 8 characters (NIST SP 800-63B
   minimum). Existing passwords keep working until changed.
@@ -20,6 +22,13 @@ All notable changes to this project are documented here. The format follows
 - `vite preview` now serves the same security headers as the dev server.
 
 ### Added
+- In-browser OCR for image-based (scanned) PDF bank statements: when a PDF has
+  no selectable text, the app offers to rasterize each page and recognize it
+  locally with tesseract.js, then feeds the reconstructed layout into the
+  existing column mapper. Fully client-side — runtime assets are self-hosted
+  from `public/ocr` (no CDN), so nothing leaves the device and the CSP is
+  unchanged. Assets are copied by `scripts/copy-ocr-assets.mjs` (postinstall,
+  plus an explicit CI step for `--ignore-scripts` installs).
 - SOC 2 readiness pack under `docs/compliance/` (system description, control
   matrix, risk register, vendor register, data classification, evidence guide,
   audit record) and written policies under `docs/policies/`.
@@ -32,6 +41,10 @@ All notable changes to this project are documented here. The format follows
 - This changelog.
 
 ### Changed
+- About page now backs its privacy claims with verifiable proof (no-server,
+  CSP-enforced, local-by-construction imports, standard Web Crypto, published
+  SBOM) and a per-library table explaining what every runtime dependency does
+  and that none of them access the network; added an OCR-specific FAQ entry.
 - CI runs with a read-only `GITHUB_TOKEN`, cancels superseded runs, and installs
   dependencies with `npm ci --ignore-scripts`.
 - Dependabot now also tracks GitHub Actions and no longer ignores major
@@ -43,6 +56,16 @@ All notable changes to this project are documented here. The format follows
   CODEOWNERS, and hosting-header files; `npm run license:check` now also
   scans `.mjs` and YAML files.
 
+### Fixed
+- Accessibility audit (WCAG 2.1 AA, see
+  [`docs/compliance/AUDIT_A11Y_2026-09-22.md`](docs/compliance/AUDIT_A11Y_2026-09-22.md)):
+  header tabs no longer emit dangling `aria-controls` while the onboarding
+  overlay is open (axe-critical); the Share Codes modal's code input is now
+  labelled; the two Add-form manager/rename dialogs gained `aria-modal`,
+  `aria-labelledby`, and focus-return-to-trigger; the Bulk Edit tag-removal
+  control now activates on Space, not just Enter; the onboarding overlay now
+  receives keyboard focus when it opens.
+
 ## [1.0.0] - 2026-08-26
 
 ### Added
@@ -52,5 +75,6 @@ All notable changes to this project are documented here. The format follows
   600,000 iterations), password-protected share codes and exports, WCAG 2.1 AA
   accessibility target, and 28 selectable themes.
 
-[Unreleased]: https://github.com/54x1/mybffpt/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/54x1/mybffpt/compare/v2026.09.1...HEAD
+[2026.09.1]: https://github.com/54x1/mybffpt/compare/v1.0.0...v2026.09.1
 [1.0.0]: https://github.com/54x1/mybffpt/releases/tag/v1.0.0

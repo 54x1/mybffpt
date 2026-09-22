@@ -81,5 +81,6 @@ export function normalizeTransaction(raw: any): Transaction {
     endDate: String(raw?.endDate ?? ""),
     source: decodeHtmlEntities(String(raw?.source ?? DEFAULT_SOURCE)),
     seriesId: raw?.seriesId ? String(raw.seriesId) : undefined,
+    splitGroupId: raw?.splitGroupId ? String(raw.splitGroupId) : undefined,
   };
 }

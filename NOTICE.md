@@ -9,6 +9,18 @@ original work of this project's contributors. If that ever changes (e.g. a
 vendored/modified third-party file is added), it must be noted here with a
 description of the change, per §4(b).
 
+## Derived Design
+
+- `src/utils/pdf.ts` and `src/utils/pdfStatement.ts` are original TypeScript
+  implementations written for this project. They implement parsing *strategies*
+  (physical layout reconstruction à la `pdftotext -layout`, transaction-line
+  anchoring, amount-column geometry inference) designed by the **monopoly**
+  project ([benjamin-awd/monopoly](https://github.com/benjamin-awd/monopoly),
+  AGPL-3.0), whose design was also studied via
+  [StatementSensei](https://github.com/benjamin-awd/StatementSensei). No source
+  code was copied; both projects share the AGPL-3.0 license, so even derivative
+  works would remain compatible with this project's license.
+
 ## Third-Party Software
 
 Third-party packages retain their own licenses; they are not relicensed under

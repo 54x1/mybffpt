@@ -24,6 +24,9 @@ export const LS_KEYS = {
   dateFormat: "financial-tracker-date-format",
   chartSelection: "financial-tracker-chart-selection",
   recurringDefaults: "financial-tracker-recurring-defaults",
+  // Manual PDF statement column mappings saved by the user ("column mapper").
+  // Not sensitive: only column positions + a user-chosen bank label.
+  pdfMaps: "financial-tracker-pdf-import-profiles",
   // M1: master-password metadata (KDF salt + password verifier). NOT encrypted —
   // it only contains the salt and an AES-GCM verifier, both safe to store.
   meta: "financial-tracker-secure-meta",

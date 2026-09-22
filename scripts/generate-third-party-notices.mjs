@@ -24,6 +24,13 @@ const checkOnly = process.argv.includes('--check');
 // the distributed browser bundle, so they're excluded from the report.
 const platformNativePattern = /^(@rolldown\/binding-|lightningcss-(?:android|darwin|freebsd|linux|win32)|fsevents$)/;
 
+// Node-only transitive deps of tesseract.js: its package.json "browser" field
+// swaps node-fetch for a browser stub, so this chain (node-fetch → whatwg-url
+// → tr46) is never reachable from the distributed bundle. tr46@0.0.3 also
+// ships no license file on disk at all, which would break generation. Same
+// rationale as the platform-native exclusions above: not in the browser app.
+const nodeOnlyStubbedPattern = /^(node-fetch|whatwg-url|tr46)@/;
+
 const reviewedLicenses = new Set([
   'AGPL-3.0-or-later',
   'Apache-2.0',
@@ -103,7 +110,10 @@ function licenseSections(entries) {
 
 const [allPackages, productionPackages] = await Promise.all([scan(false), scan(true)]);
 const all = rows(allPackages).filter(({ name }) => !platformNativePattern.test(name));
-const production = rows(productionPackages).filter(({ name }) => !name.startsWith('mybffpt@') && !platformNativePattern.test(name));
+// Node-only stubbed chain is excluded from the *production* inventory (and its
+// embedded license texts) — it never reaches the browser bundle. It still
+// appears in the development-only list below for completeness.
+const production = rows(productionPackages).filter(({ name }) => !name.startsWith('mybffpt@') && !platformNativePattern.test(name) && !nodeOnlyStubbedPattern.test(name));
 const productionNames = new Set(production.map(({ name }) => name));
 const developmentOnly = all.filter(({ name }) => !productionNames.has(name) && !name.startsWith('mybffpt@'));
 assertReviewed(all);
@@ -145,7 +155,11 @@ let stale = false;
 for (const [file, content] of outputs) {
   if (checkOnly) {
     let current = '';
-    try { current = readFileSync(file, 'utf8'); } catch {}
+    try {
+      current = readFileSync(file, 'utf8');
+    } catch {
+      // file missing — treated as stale below
+    }
     if (current !== content) {
       console.error(`${file} is missing or stale; run npm run license:notices`);
       stale = true;

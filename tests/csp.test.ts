@@ -61,7 +61,10 @@ describe("Content-Security-Policy", () => {
 
   it.each([
     ["default-src", "'self'"],
-    ["script-src", "'self'"],
+    // 'wasm-unsafe-eval' is required by pdf.js (PDF→CSV import); it permits
+    // only WebAssembly compilation, NOT plain JS eval. Exact-token check in
+    // the next test keeps classic unsafe-eval banned.
+    ["script-src", "'self' 'wasm-unsafe-eval'"],
     ["object-src", "'none'"],
     ["base-uri", "'self'"],
     ["frame-ancestors", "'none'"],
@@ -72,8 +75,15 @@ describe("Content-Security-Policy", () => {
   });
 
   it("never allows inline, eval, or remote script", () => {
-    const scriptSrc = parseCsp(metaCsp!).get("script-src")!;
-    expect(scriptSrc).not.toMatch(/unsafe-inline|unsafe-eval|https?:|\*/);
+    const tokens = parseCsp(metaCsp!).get("script-src")!.split(/\s+/);
+    // Token-wise so the wasm variant is allowed but classic unsafe-eval,
+    // unsafe-inline, remote origins (http:, https:) and wildcards are not.
+    for (const tok of tokens) {
+      expect(tok).not.toBe("'unsafe-inline'");
+      expect(tok).not.toBe("'unsafe-eval'");
+      expect(tok).not.toMatch(/^https?:/);
+      expect(tok).not.toBe("*");
+    }
   });
 });
 

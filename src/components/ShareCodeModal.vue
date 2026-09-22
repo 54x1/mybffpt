@@ -43,7 +43,7 @@
             </span>
           </div>
           <div class="join">
-            <input :value="code" readonly class="input input-bordered join-item flex-1 font-mono text-xs" />
+            <input :value="code" readonly aria-label="Share code" class="input input-bordered join-item flex-1 font-mono text-xs" />
             <button type="button" class="btn btn-sm join-item" @click="$emit('copy', code)">
               Copy
             </button>

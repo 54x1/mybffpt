@@ -74,7 +74,8 @@
                   {{ tag }}
                   <span role="button" tabindex="0" class="hover:scale-125 transition-transform"
                     aria-label="Don't add this tag" @click.stop.prevent="unpickAddTag(tag)"
-                    @keydown.enter.stop.prevent="unpickAddTag(tag)">
+                    @keydown.enter.stop.prevent="unpickAddTag(tag)"
+                    @keydown.space.stop.prevent="unpickAddTag(tag)">
                     ✕
                   </span>
                 </span>

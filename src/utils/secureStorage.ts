@@ -110,7 +110,7 @@ function storageFor(mode: StayUnlockedMode): Storage | null {
 
 /** Current stay-unlocked mode. Migrates the legacy "true"/"false" values. */
 export function getStayUnlockedMode(): StayUnlockedMode {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = localStorage.getItem(LS_KEYS.stayUnlocked);
   } catch {
@@ -170,7 +170,7 @@ export async function exportSessionKey(): Promise<void> {
 export async function restoreSessionKey(): Promise<boolean> {
   const storage = storageFor(getStayUnlockedMode());
   if (!storage) return false;
-  let b64: string | null = null;
+  let b64: string | null;
   try {
     b64 = storage.getItem(LS_KEYS.sessionKey);
   } catch {
@@ -306,7 +306,7 @@ export async function secureGet(key: string): Promise<any> {
     return await decryptWithKey(activeKey, item);
   } catch (e) {
     devWarn(`Failed to decrypt "${key}":`, e);
-    throw new Error("Failed to decrypt stored data");
+    throw new Error("Failed to decrypt stored data", { cause: e });
   }
 }
 

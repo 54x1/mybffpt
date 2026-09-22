@@ -24,13 +24,17 @@
           <!-- File upload -->
           <div class="form-control">
             <label class="label" for="csvUpload">
-              <span class="label-text">Upload CSV File</span>
+              <span class="label-text">Upload CSV or PDF Statement</span>
             </label>
-            <input id="csvUpload" type="file" accept=".csv" multiple class="file-input file-input-bordered w-full"
+            <input id="csvUpload" type="file" accept=".csv,.pdf" multiple class="file-input file-input-bordered w-full"
               @change="$emit('file-upload', $event)" />
             <p class="text-xs text-base-content/60 mt-1">
-              After upload you'll be prompted to label the import (e.g.,
-              "ING Everyday - May 2025").
+              CSV files and PDF bank statements are parsed locally in your
+              browser — nothing is uploaded. Password-protected PDFs will ask
+              for the document password. For each PDF you'll confirm which
+              columns hold the debit, credit and description (saved layouts
+              apply automatically), then label the import
+              (e.g., "ING Everyday - May 2025").
             </p>
           </div>
 
@@ -62,6 +66,34 @@
             <button type="button" class="btn btn-error btn-sm" @click="$emit('clear-all')">
               🧨 Remove all transactions
             </button>
+          </div>
+
+          <!-- Saved PDF statement layouts (column mapper profiles) -->
+          <div v-if="pdfProfiles.length" class="form-control">
+            <label class="label">
+              <span class="label-text">Saved statement layouts</span>
+            </label>
+            <ul class="divide-y divide-base-300 rounded border border-base-300">
+              <li v-for="p in pdfProfiles" :key="p.id"
+                class="flex items-center gap-2 px-3 py-2 text-sm">
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium truncate">{{ p.label }}</p>
+                  <p class="text-xs text-base-content/60 truncate">
+                    {{ mappingSummary(p.mapping) }} · saved {{ formatSavedDate(p.createdAt) }}
+                  </p>
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs text-error"
+                  :aria-label="`Remove layout ${p.label}`"
+                  @click="$emit('delete-pdf-profile', p.id)">
+                  Remove
+                </button>
+              </li>
+            </ul>
+            <p class="text-xs text-base-content/60 mt-1">
+              Layouts are applied automatically when an imported PDF matches.
+              They travel with your JSON export, so other devices import the
+              same banks preconfigured. Remove one to go back to manual mapping.
+            </p>
           </div>
         </div>
 
@@ -202,6 +234,8 @@
 </template>
 
 <script setup lang="ts">
+import type { PdfColumnMapping, PdfImportProfile } from "../utils/pdfStatement";
+
 const importUrl = defineModel<string>("importUrl", { required: true });
 
 defineProps<{
@@ -215,6 +249,7 @@ defineProps<{
   importStatus: string;
   importError: boolean;
   lastImportSummary: string;
+  pdfProfiles: PdfImportProfile[];
 }>();
 
 defineEmits<{
@@ -229,5 +264,24 @@ defineEmits<{
   (e: "open-export-modal"): void;
   (e: "generate-share-codes"): void;
   (e: "web-share"): void;
+  (e: "delete-pdf-profile", id: string): void;
 }>();
+
+/** Human-readable one-liner for a saved mapping, e.g. "debit col 62 · credit col 84". */
+function mappingSummary(m: PdfColumnMapping): string {
+  const parts: string[] = [];
+  if (m.mode === "split") {
+    if (m.debitAnchor !== undefined) parts.push(`debit col ${Math.round(m.debitAnchor)}`);
+    if (m.creditAnchor !== undefined) parts.push(`credit col ${Math.round(m.creditAnchor)}`);
+  } else if (m.singleAnchor !== undefined) {
+    parts.push(`amount col ${Math.round(m.singleAnchor)}`);
+  }
+  parts.push(m.descAnchor !== undefined ? `desc col ${Math.round(m.descAnchor)}` : "desc: all text");
+  return parts.join(" · ");
+}
+
+function formatSavedDate(iso: string): string {
+  const d = new Date(iso);
+  return isFinite(d.getTime()) ? d.toLocaleDateString() : iso;
+}
 </script>
