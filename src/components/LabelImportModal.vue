@@ -16,7 +16,7 @@
         📝 Label this import
       </h3>
       <p class="mt-2 text-sm text-base-content/70">
-        Give this CSV a name so you can filter and report on it later.
+        Give this import a name so you can filter and report on it later.
         <span v-if="labelImport.filename">
           (<strong>{{ labelImport.filename }}</strong>)
         </span>

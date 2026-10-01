@@ -3695,7 +3695,7 @@ async function importPdfFile(bytes: Uint8Array, filename: string) {
       }
       importQueue.value.push({ file: null, rows: txs, filename });
       pushToast(
-        `Parsed ${filename}: kept ${txs.length} transactions (${result.mode} layout)`,
+        `Imported ${txs.length} transactions from ${filename}`,
         "success",
       );
       return;
