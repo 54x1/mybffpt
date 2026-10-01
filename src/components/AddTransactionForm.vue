@@ -659,7 +659,7 @@
                     <span>Parts must add up to <strong>${{ (amountCents / 100).toFixed(2) }}</strong></span>
                     <label class="flex items-center gap-2 cursor-pointer">
                       <span>Split evenly into</span>
-                      <input v-model.number="splitCount" type="number" min="2" max="12" inputmode="numeric"
+                      <input v-model.number="splitCount" type="number" min="2" :max="splitMaxParts" inputmode="numeric"
                         class="input input-bordered input-xs w-16 text-center" aria-label="Number of even parts"
                         @change="applyEvenSplit(splitCount)" />
                       <button type="button" class="btn btn-ghost btn-xs" @click="applyEvenSplit(splitCount)">
@@ -738,7 +738,7 @@
                   </ul>
 
                   <div class="flex items-center justify-between gap-2 px-3 py-2 border-t border-base-300">
-                    <button type="button" class="btn btn-ghost btn-xs gap-1" @click="addSplitRow">
+                    <button type="button" class="btn btn-ghost btn-xs gap-1" :disabled="splitRemainderCents < 1" @click="addSplitRow">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                       </svg>
@@ -925,6 +925,8 @@ const splitRemainderCents = computed(() => amountCents.value - splitTotalCents.v
  * but an existing saved plan being edited may legitimately have fewer.
  */
 const splitMinRows = computed(() => (splitLoadedFromGroup.value ? 2 : 4));
+/** Hard cap on parts: each part must be at least $0.01, so max parts = total cents. */
+const splitMaxParts = computed(() => Math.max(2, amountCents.value));
 const splitBalanced = computed(
   () => splitRows.value.length >= splitMinRows.value && splitRemainderCents.value === 0
 );
@@ -1013,7 +1015,7 @@ const splitPlanEnd = computed({
       while (k < 47 && advanceFrequency(anchor, splitFreq.value, k + 1) <= nv) {
         k++;
       }
-      const target = Math.min(12, Math.max(2, k + 1));
+      const target = Math.min(splitMaxParts.value, Math.max(2, k + 1));
       if (target !== splitRows.value.length) {
         splitCount.value = target;
         splitRows.value = makeEvenRows(target); // dates derive from the anchor
@@ -1026,7 +1028,7 @@ const splitPlanEnd = computed({
     if (next.length < 2) splitRows.value.slice(0, 2).forEach((r) => {
       if (!next.includes(r)) next.push(r);
     });
-    while (next.length < 12) {
+    while (next.length < splitMaxParts.value) {
       const lastDate = next[next.length - 1].date || dates[0];
       const nd = advanceFrequency(lastDate, splitFreq.value, 1);
       if (nd > nv) break;
@@ -1081,13 +1083,21 @@ function toggleSplit() {
 }
 
 function applyEvenSplit(count: unknown) {
-  const n = Math.min(12, Math.max(2, Math.floor(Number(count)) || 2));
-  splitCount.value = n;
-  splitRows.value = makeEvenRows(n);
+  const requested = Math.max(2, Math.floor(Number(count)) || 2);
+  if (requested > splitMaxParts.value) {
+    splitErrorLocal.value = `Maximum ${splitMaxParts.value} parts — each part must be at least $0.01.`;
+    return;
+  }
+  splitCount.value = requested;
+  splitRows.value = makeEvenRows(requested);
   splitErrorLocal.value = "";
 }
 
 function addSplitRow() {
+  if (splitRemainderCents.value < 1) {
+    splitErrorLocal.value = "Not enough left to add another part (each must be at least $0.01).";
+    return;
+  }
   // New row takes whatever is still unallocated — usually lands at a
   // balanced total in one click.
   const cat = currentCategory.value || props.newTransaction.category || "";
@@ -1134,7 +1144,7 @@ function loadSplitGroup(group: Transaction[]) {
     id: t.id,
     date: t.date,
   }));
-  splitCount.value = Math.min(12, Math.max(2, sorted.length));
+  splitCount.value = Math.max(2, sorted.length);
   const freq = detectSplitFreq(sorted.map((t) => t.date));
   if (freq) {
     // Uniform cadence → show it as a part-pay schedule anchored on the first date.

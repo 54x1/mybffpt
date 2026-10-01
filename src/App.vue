@@ -2516,25 +2516,58 @@ function addTransaction() {
     )
     : "";
 
-  // ===== Split path (add or edit) =====
-  // Editing a member of a saved plan loads the GROUP TOTAL into the form. If
-  // the split UI isn't in play — panel closed, or recurring toggled on (the
-  // panel hides) — put this row's own part amount back so the plain save path
-  // never writes the whole plan total onto one transaction. Only when the
-  // amount is still the untouched group total: an explicit edit here means
-  // "change just this row", and that value must be respected.
+  // ===== Cancel-split path (edit only) =====
+  // Editing a member of a saved split auto-opens the panel with the GROUP
+  // TOTAL in the amount field. If the user collapses the panel and saves,
+  // they mean "un-split this": drop every sibling part and keep ONE
+  // standalone transaction carrying the full (unsplit) amount.
   if (
     !addFormRef.value?.splitActive &&
     addFormRef.value?.splitLoadedFromGroup &&
     currentlyEditingId.value
   ) {
-    const orig = transactions.value.find((t) => t.id === currentlyEditingId.value);
+    const editingId = currentlyEditingId.value;
+    const orig = transactions.value.find((t) => t.id === editingId);
     if (orig?.splitGroupId) {
-      const groupTotalCents = transactions.value
-        .filter((t) => t.splitGroupId === orig.splitGroupId)
-        .reduce((s, t) => s + Math.round(t.amount * 100), 0);
-      if (Math.round(Number(newTransaction.amount) * 100) === groupTotalCents) {
-        newTransaction.amount = orig.amount;
+      const group = transactions.value.filter(
+        (t) => t.splitGroupId === orig.splitGroupId
+      );
+      if (group.length >= 2) {
+        const fullTotalCents = group.reduce(
+          (s, t) => s + Math.round(t.amount * 100),
+          0
+        );
+        const baseTx: Transaction = {
+          ...newTransaction,
+          id: editingId,
+          amount: fullTotalCents / 100,
+          splitGroupId: undefined,
+          endDate: endISO,
+          source: newTransaction.source || "Manual",
+        };
+        // Keep this row in its original position; drop every other part.
+        transactions.value = transactions.value.flatMap((t) => {
+          if (t.id === editingId) return [baseTx];
+          if (t.splitGroupId === orig.splitGroupId) return [];
+          return [t];
+        });
+        categorySet.add(baseTx.category);
+        touchCategorySet();
+        pushToast("Split cancelled · saved as one transaction", "success");
+
+        currentlyEditingId.value = null;
+        addFormRef.value.resetSplit();
+        resetForm();
+        activeTab.value = "transactions";
+        nextTick(() => {
+          const el = document.getElementById(`tx-${editingId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("border-primary", "bg-base-200");
+            setTimeout(() => el.classList.remove("border-primary", "bg-base-200"), 2000);
+          }
+        });
+        return;
       }
     }
   }
