@@ -74,9 +74,10 @@
 
         <div class="divider"></div>
 
-        <h2 class="text-2xl font-bold">🛡️ Complete Transparency</h2>
+        <h2 class="text-2xl font-bold">🛡️ Full Transparency</h2>
       
-        <strong>Why it's safe to read your statements from myBFFPT — myBudget Forecaster?</strong>
+        <p class="font-semibold">Why it's safe to read your statements from myBFFPT — myBudget Forecaster?</p>
+
         <ul class="list-disc pl-5 space-y-2">
           <li>
             <strong>There is no server.</strong> No backend, no account, no

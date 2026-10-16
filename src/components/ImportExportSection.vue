@@ -29,12 +29,12 @@
             <input id="csvUpload" type="file" accept=".csv,.pdf" multiple class="file-input file-input-bordered w-full"
               @change="$emit('file-upload', $event)" />
             <p class="text-xs text-base-content/60 mt-1">
-              CSV files and PDF bank statements are parsed locally in your
+              CSV files and PDF bank statements are read locally in your
               browser — nothing is uploaded. Password-protected PDFs will ask
-              for the document password. For each PDF you'll confirm which
-              columns hold the debit, credit and description (saved layouts
-              apply automatically), then label the import
-              (e.g., "ING Everyday - May 2025").
+              for the document password. For each PDF we'll show you a preview
+              so you can check the amounts look right before importing (we
+              remember your bank's layout for next time), then you give the
+              import a name (e.g., "ING Everyday - May 2025").
             </p>
           </div>
 

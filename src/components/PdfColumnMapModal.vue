@@ -13,35 +13,66 @@
   <dialog ref="dialogRef" class="modal" aria-modal="true" aria-labelledby="pdfMapHeading" @close="$emit('close')">
     <div class="modal-box w-full max-w-2xl">
       <h3 id="pdfMapHeading" class="font-bold text-lg mb-1">
-        🧭 Map Statement Columns
+        🧭 Check your statement columns
       </h3>
       <p class="text-sm opacity-70 mb-4 break-all">
-        {{ filename }} — {{ detection.rowCount }} transaction-like rows found.
-        Tell us which column holds what, and we'll import them.
+        {{ filename }} — we found {{ detection.rowCount }} transactions.
+        Check the preview looks right, then import.
       </p>
 
       <div v-if="matchedProfileLabel" class="alert alert-success text-xs mb-3">
-        <span>Saved layout <strong>{{ matchedProfileLabel }}</strong> applied — adjust below if needed.</span>
+        <span>We remembered how to read this statement format (<strong>{{ matchedProfileLabel }}</strong>). Just check the preview looks right.</span>
       </div>
 
       <div v-if="detection.rowCount === 0" class="alert alert-warning text-sm mb-4">
-        <span>No transaction-like rows were found in this PDF (lines starting with a date).
-          It may be a scanned image or an unusual layout — try exporting a CSV statement instead.</span>
+        <span>We couldn't find any transactions in this PDF. It may be a scanned image or an unusual layout — try exporting a CSV statement from your bank instead.</span>
+      </div>
+
+      <!-- Live preview FIRST — the user's main way to confirm the import looks right -->
+      <div class="mb-4">
+        <p class="text-xs font-semibold mb-1">
+          Preview (first {{ Math.min(preview.rows.length, 8) }} of {{ preview.rows.length }})
+        </p>
+        <div v-if="preview.rows.length" class="overflow-x-auto rounded border border-base-300">
+          <table class="table table-xs w-full">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th class="text-right">
+                  <span class="text-success">Money in</span> / <span class="text-error">Money out</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(r, i) in preview.rows.slice(0, 8)" :key="i">
+                <td class="whitespace-nowrap">{{ r.dateISO }}</td>
+                <td class="max-w-[16rem] truncate" :title="r.description">{{ r.description }}</td>
+                <td class="text-right whitespace-nowrap" :class="r.amount < 0 ? 'text-error' : 'text-success'">
+                  {{ r.amount < 0 ? "−" : "+" }}{{ Math.abs(r.amount).toFixed(2) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-else class="text-xs text-warning">
+          Nothing matches this selection yet — pick different columns below.
+        </p>
       </div>
 
       <!-- Amount mode -->
       <div class="form-control mb-3">
         <label class="label pt-0">
-          <span class="label-text font-medium text-sm">Amount columns</span>
+          <span class="label-text font-medium text-sm">How are amounts shown?</span>
         </label>
         <div class="role-radios" role="radiogroup" aria-label="Amount column mode">
           <label class="cursor-pointer flex items-center gap-2 text-sm">
             <input type="radio" name="pdfMapMode" value="split" v-model="mode" class="radio radio-sm" />
-            Separate debit and credit columns (money out / money in)
+            Two columns — one for money out, one for money in
           </label>
           <label class="cursor-pointer flex items-center gap-2 text-sm">
             <input type="radio" name="pdfMapMode" value="single" v-model="mode" class="radio radio-sm" />
-            One amount column (signed, or positive = spending)
+            One column — amounts with a + or − sign
           </label>
         </div>
       </div>
@@ -50,7 +81,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <template v-if="mode === 'split'">
           <div class="form-control">
-            <label class="label py-1" for="pdfMapDebit"><span class="label-text text-sm">Money out (debit)</span></label>
+            <label class="label py-1" for="pdfMapDebit"><span class="label-text text-sm">Money out</span></label>
             <select id="pdfMapDebit" class="select select-bordered select-sm w-full" v-model.number="debitAnchor">
               <option disabled :value="-1">Choose column…</option>
               <option v-for="col in numericColumns" :key="'d' + col.anchorCol" :value="col.anchorCol">
@@ -59,13 +90,19 @@
             </select>
           </div>
           <div class="form-control">
-            <label class="label py-1" for="pdfMapCredit"><span class="label-text text-sm">Money in (credit)</span></label>
+            <label class="label py-1" for="pdfMapCredit"><span class="label-text text-sm">Money in</span></label>
             <select id="pdfMapCredit" class="select select-bordered select-sm w-full" v-model.number="creditAnchor">
               <option disabled :value="-1">Choose column…</option>
               <option v-for="col in numericColumns" :key="'c' + col.anchorCol" :value="col.anchorCol">
                 {{ colLabel(col) }}
               </option>
             </select>
+          </div>
+          <div class="sm:col-span-2">
+            <button type="button" class="btn btn-outline btn-sm" @click="flipSplit"
+              :disabled="debitAnchor === NONE || creditAnchor === NONE">
+              ⇄ Swap money in &amp; out
+            </button>
           </div>
         </template>
         <template v-else>
@@ -94,7 +131,7 @@
       <!-- Raw statement lines with live column markers, so the user can see
            exactly where each chosen column lands on their own layout. -->
       <div v-if="rawStatement" class="mb-4">
-        <p class="text-xs font-semibold mb-1">Raw statement — pick columns that line up</p>
+        <p class="text-xs font-semibold mb-1">Where the columns sit on your statement</p>
         <div
           class="overflow-x-auto rounded border border-base-300 bg-base-200/50 p-2 font-mono text-[11px] leading-tight"
           style="white-space: pre"
@@ -105,34 +142,11 @@
           <span v-for="(ln, i) in rawStatement.lines" :key="'r' + i" class="block">{{ ln }}</span>
         </div>
         <p class="text-[10px] opacity-70 mt-1">
-          <span class="font-bold text-primary">D</span> debit ·
-          <span class="font-bold text-primary">C</span> credit ·
+          <span class="font-bold text-primary">D</span> money out ·
+          <span class="font-bold text-primary">C</span> money in ·
           <span class="font-bold text-primary">$</span> amount ·
-          <span class="font-bold text-primary">T</span> description start.
-          Amount markers sit at the right edge of each column.
+          <span class="font-bold text-primary">T</span> description.
         </p>
-      </div>
-
-      <!-- Live preview -->
-      <div class="mb-4">
-        <p class="text-xs font-semibold mb-1">Preview (first {{ Math.min(preview.rows.length, 8) }} of {{ preview.rows.length }})</p>
-        <div v-if="preview.rows.length" class="overflow-x-auto rounded border border-base-300">
-          <table class="table table-xs w-full">
-            <thead>
-              <tr><th>Date</th><th>Description</th><th class="text-right">Amount</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="(r, i) in preview.rows.slice(0, 8)" :key="i">
-                <td class="whitespace-nowrap">{{ r.dateISO }}</td>
-                <td class="max-w-[16rem] truncate" :title="r.description">{{ r.description }}</td>
-                <td class="text-right whitespace-nowrap" :class="r.amount < 0 ? 'text-error' : 'text-success'">
-                  {{ r.amount.toFixed(2) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p v-else class="text-xs text-warning">Nothing matches this selection yet — pick different columns.</p>
       </div>
 
       <!-- Save as reusable layout -->
@@ -144,6 +158,11 @@
         <input v-if="saveLayout" v-model="layoutLabel" type="text" class="input input-bordered input-sm mt-2"
           placeholder="e.g. NAB Reward + Everyday" aria-label="Saved layout name" maxlength="60" />
       </div>
+
+      <!-- Explain why Import is disabled, so the user knows what to fix -->
+      <p v-if="!mappingValid && detection.rowCount > 0" class="text-xs text-warning mt-2">
+        {{ disabledReason }}
+      </p>
 
       <div class="modal-action">
         <button type="button" class="btn btn-ghost" @click="dialogRef?.close()">Cancel</button>
@@ -264,10 +283,32 @@ function nearestText(anchor: number): number {
   return bestDist <= 8 ? best : DESC_ALL;
 }
 
+/** Friendly left/middle/right position of a column, so the user doesn't have
+ * to reason about arbitrary grid coordinates. */
+function positionLabel(anchorCol: number): string {
+  const cols = numericColumns.value;
+  if (!cols.length) return "this column";
+  const sorted = [...cols].sort((a, b) => a.anchorCol - b.anchorCol);
+  const idx = sorted.findIndex((c) => c.anchorCol === anchorCol);
+  if (idx === -1) return "this column";
+  if (sorted.length === 1) return "the only amount column";
+  if (idx === 0) return "leftmost column";
+  if (idx === sorted.length - 1) return "rightmost column";
+  return "a middle column";
+}
+
 function colLabel(col: DetectedColumn): string {
-  const pos = col.kind === "numeric" ? `col ${Math.round(col.anchorCol)} (right edge)` : `col ${Math.round(col.anchorCol)}`;
   const samples = col.samples.slice(0, 3).join(" · ");
+  const pos = col.kind === "numeric" ? positionLabel(col.anchorCol) : "text column";
   return `${pos} — ${samples || "no samples"} (${col.fillCount} rows)`;
+}
+
+/** Swap the money-in / money-out columns — the quick fix when the preview
+ * shows the signs reversed. The live preview re-parses automatically. */
+function flipSplit() {
+  const d = debitAnchor.value;
+  debitAnchor.value = creditAnchor.value;
+  creditAnchor.value = d;
 }
 
 const currentMapping = computed<PdfColumnMapping | null>(() => {
@@ -298,6 +339,22 @@ const preview = computed(() => {
 });
 
 const mappingValid = computed(() => currentMapping.value !== null && preview.value.rows.length > 0);
+
+/** Plain-English reason the Import button is disabled, so the user knows
+ * exactly what to fix instead of seeing a silently-disabled button. */
+const disabledReason = computed(() => {
+  if (currentMapping.value === null) {
+    if (mode.value === "split") {
+      if (debitAnchor.value === NONE && creditAnchor.value === NONE)
+        return "Pick the money-out and money-in columns to enable Import.";
+      if (debitAnchor.value === creditAnchor.value)
+        return "Money out and money in must be two different columns.";
+      return "Pick the missing money-out or money-in column to enable Import.";
+    }
+    return "Pick the amount column to enable Import.";
+  }
+  return "No transactions match this selection yet — try different columns.";
+});
 
 // ── Raw statement view with live column markers ─────────────────────────────
 // previewLines keep their leading whitespace, so character positions line up
