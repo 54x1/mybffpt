@@ -76,8 +76,9 @@
 
         <h2 class="text-2xl font-bold">🛡️ Full Transparency</h2>
       
+        <p class="font-semibold">Why it's safe to read your statements from myBFFPT — myBudget Forecaster?</p>
+
         <ul class="list-disc pl-5 space-y-2">
-          <strong>Why it's safe to read your statements from myBFFPT — myBudget Forecaster?</strong>
           <li>
             <strong>There is no server.</strong> No backend, no account, no
             database. The app is a set of static files that run in your

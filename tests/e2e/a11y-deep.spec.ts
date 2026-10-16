@@ -161,7 +161,7 @@ test.describe('deep accessibility scan — modals & views', () => {
     await page.goto('/');
     await page.getByRole('tab', { name: 'Import' }).click();
     await page.locator('#csvUpload').setInputFiles(fixture);
-    await expect(page.getByRole('heading', { name: /Map Statement Columns/ })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: /Check your statement columns/ })).toBeVisible({ timeout: 30_000 });
     await scan(page);
   });
 
