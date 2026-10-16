@@ -923,7 +923,7 @@ const dismissTips = () => {
   showTips.value = false;
   localStorage.setItem(LS_KEYS.tips, "true");
 };
-const version = ref("v2026.09.1");
+const version = ref("v2026.10.1");
 
 // Transaction form
 const newTransaction = reactive<Transaction>({
