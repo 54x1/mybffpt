@@ -245,7 +245,7 @@
     <!-- Label Import Modal -->
     <LabelImportModal :label-import="labelImport" :label-import-filtered-tags="labelImportFilteredTags"
       @cancel="cancelLabelImport" @confirm="confirmLabelImport" @add-tag-from-query="addLabelTagFromQuery"
-      @toggle-tag="toggleLabelTag" />
+      @toggle-tag="toggleLabelTag" @credit-card-mode="onCreditCardModeChange" />
 
     <!-- Smart Select Modal -->
     <SmartSelectModal v-if="openSmartSelect" :smart-select="smartSelect" :categories="categories"
@@ -393,7 +393,9 @@ import {
   scanAmountConvention,
   rowToTransaction,
   stableKey,
+  detectCreditCardStatement,
 } from "./utils/csv";
+import type { CsvImportOptions, CreditCardDetection } from "./utils/types";
 import { parseSmartQuery, txMatches } from "./utils/query";
 import { devWarn, devError } from "./utils/debug";
 import {
@@ -632,6 +634,10 @@ type ImportJob = {
   file: File | null;
   rows: Transaction[];
   filename: string;
+  /** Raw CSV text kept so the credit-card override can re-parse before commit. */
+  fileText?: string;
+  /** Credit-card detection result shown in the label modal (CSV imports). */
+  creditCard?: CreditCardDetection | null;
 };
 
 const importQueue = ref<ImportJob[]>([]);
@@ -1165,7 +1171,32 @@ const labelImport = reactive({
   // to the whole batch — see confirmLabelImport.
   autoDetectedTags: [] as string[],
   tagsQuery: "",
+  // Credit-card override state for the modal currently open (CSV imports).
+  creditCardMode: "auto" as "auto" | "force" | "off",
+  creditCardDetected: null as CreditCardDetection | null,
 });
+// The ImportJob backing the open label modal — kept so toggling credit-card
+// mode can re-parse the original file text before commit.
+let currentLabelJob: ImportJob | null = null;
+
+// Recompute the pending rows under a new credit-card mode and refresh the
+// modal's preview (counts, tags) without closing it.
+function onCreditCardModeChange(mode: "auto" | "force" | "off") {
+  labelImport.creditCardMode = mode;
+  if (!currentLabelJob?.fileText) return;
+  const txs = reparseImportJob(currentLabelJob, mode);
+  currentLabelJob.rows = txs;
+  const existingKeys = new Set(transactions.value.map((t) => stableKey(t)));
+  labelImport.imported = txs.filter((t) => !existingKeys.has(stableKey(t)));
+  labelImport.autoDetectedTags = sortAlpha(
+    dedupeCI(labelImport.imported.flatMap((t) => t.tags || []))
+  );
+  // Keep user-picked tags; drop auto tags that vanished with the re-parse.
+  labelImport.tagsSelected = labelImport.tagsSelected.filter((tg) =>
+    labelImport.autoDetectedTags.some((a) => eqi(a, tg)) ||
+    !labelImport.autoDetectedTags.length
+  );
+}
 // const openSmartSelect = ref(false);
 const bulkEdit = reactive({
   open: false,
@@ -3353,9 +3384,18 @@ function applyBulkEdit() {
 // Parses raw CSV text into normalized transactions. Shared by the plain-CSV
 // upload path and the encrypted-CSV import path so both use identical column
 // inference, headerless detection, and amount-convention scanning.
-function parseCsvTextToTransactions(text: string, fallbackLabel: string): Transaction[] {
+// Credit-card handling: with `creditCardMode` "auto" (default) a statement is
+// detected from headers/filename/row shape; "force" applies card sign logic
+// regardless; "off" keeps legacy bank-sign behaviour. The detection result is
+// returned so the UI can surface it and let the user override before commit.
+function parseCsvTextDetailed(
+  text: string,
+  fallbackLabel: string,
+  opts: CsvImportOptions = {},
+  filename = ""
+): { txs: Transaction[]; creditCard: CreditCardDetection | null } {
   const rows = parseCSV(text);
-  if (!rows.length) return [];
+  if (!rows.length) return { txs: [], creditCard: null };
 
   // ── Headerless CSV detection (BEFORE column inference) ──
   // If the first row looks like data (starts with a digit, has 3+ cols),
@@ -3388,8 +3428,27 @@ function parseCsvTextToTransactions(text: string, fallbackLabel: string): Transa
 
   const cols = inferColumns(headers);
 
-  // ── Scan for amount convention (only for single-amount banks) ──
-  if (cols.amount != null && cols.debit == null && cols.credit == null
+  // ── Credit-card statement detection (before convention scan — card mode
+  // replaces the sign-convention heuristic entirely) ──
+  let creditCard: CreditCardDetection | null = null;
+  const ccMode = opts.creditCardMode ?? "auto";
+  if (ccMode === "force") {
+    cols.creditCard = true;
+    creditCard = { likely: true, signals: ["manually selected"], repaymentRatio: 0 };
+  } else if (ccMode === "auto" && cols.mobileId == null && cols.desktopId == null) {
+    const det = detectCreditCardStatement(headers, dataRows, cols, filename || fallbackLabel);
+    creditCard = det;
+    if (det.likely) {
+      cols.creditCard = true;
+      // Mixed multi-account exports: only the detected card accounts get
+      // card sign logic; deposit rows in the same file stay on bank logic.
+      if (det.cardAccounts?.length) cols.creditCardAccounts = det.cardAccounts;
+      dbg("Credit-card statement detected:", det.signals, det.cardAccounts ?? "(whole file)");
+    }
+  }
+
+  // ── Scan for amount convention (only for single-amount banks, non-card) ──
+  if (!cols.creditCard && cols.amount != null && cols.debit == null && cols.credit == null
     && cols.mobileId == null && cols.desktopId == null) {
     cols.amountConvention = scanAmountConvention(dataRows, cols.amount);
     dbg("Amount convention:", cols.amountConvention);
@@ -3408,6 +3467,7 @@ function parseCsvTextToTransactions(text: string, fallbackLabel: string): Transa
     dirCol: cols.drcr,
     currencyCol: cols.currency,
     descCols: cols.desc,
+    creditCardMode: cols.creditCard ? "credit-card" : "bank",
     dateHeader: headers[cols.date],
     amountHeader: cols.amount != null ? headers[cols.amount] : null,
     dirHeader: cols.drcr != null ? headers[cols.drcr] : null,
@@ -3425,7 +3485,29 @@ function parseCsvTextToTransactions(text: string, fallbackLabel: string): Transa
   dbg("kept transactions:", txs.length, "of", dataRows.length);
   dbgge();
 
-  return txs;
+  return { txs, creditCard };
+}
+
+// Back-compat wrapper: returns just the transactions.
+function parseCsvTextToTransactions(
+  text: string,
+  fallbackLabel: string,
+  opts: CsvImportOptions = {},
+  filename = ""
+): Transaction[] {
+  return parseCsvTextDetailed(text, fallbackLabel, opts, filename).txs;
+}
+
+// Re-parse a file's text under an explicit credit-card mode (used by the
+// label modal's override toggle before the import is committed).
+function reparseImportJob(job: ImportJob, mode: "auto" | "force" | "off"): Transaction[] {
+  if (!job.file) return job.rows; // PDF retries keep their parsed rows
+  try {
+    return parseCsvTextToTransactions(job.fileText ?? "", job.filename, { creditCardMode: mode }, job.filename);
+  } catch (err) {
+    devError("Re-parse failed:", err);
+    return job.rows;
+  }
 }
 
 // Year hint for yearless statement dates ("2 JUL"): prefer a 4-digit year in
@@ -3778,11 +3860,11 @@ function handleFileUpload(e: Event) {
         const text = await f.text();
         // Build a source label placeholder; user can rename in modal
         const fallbackLabel = f.name.replace(/\.[^.]+$/, "");
-        const txs = parseCsvTextToTransactions(text, fallbackLabel);
+        const { txs, creditCard } = parseCsvTextDetailed(text, fallbackLabel, {}, f.name);
 
-        importQueue.value.push({ file: f, rows: txs, filename: f.name });
+        importQueue.value.push({ file: f, rows: txs, filename: f.name, fileText: text, creditCard });
         pushToast(
-          `Parsed ${f.name}: kept ${txs.length} transactions (see console)`,
+          `Parsed ${f.name}: kept ${txs.length} transactions${creditCard?.likely ? " (detected as credit card)" : ""}`,
           txs.length ? "success" : "warning"
         );
       } catch (err) {
@@ -3815,6 +3897,7 @@ function prepareNextImport() {
     return;
   }
   importingNow = true;
+  currentLabelJob = job;
 
   // De-dupe against existing BEFORE showing counts
   const existingKeys = new Set(transactions.value.map((t) => stableKey(t)));
@@ -3825,16 +3908,25 @@ function prepareNextImport() {
   labelImport.label = job.filename.replace(/\.[^.]+$/, "");
   labelImport.note = "";
   labelImport.imported = unique;
+  // Credit-card suggestion: prefill the toggle from detection and seed a
+  // "credit card" tag so these transactions stay separable in reports.
+  const det = job.creditCard ?? null;
+  labelImport.creditCardDetected = det;
+  labelImport.creditCardMode = det?.likely ? "force" : "off";
   labelImport.autoDetectedTags = sortAlpha(
     dedupeCI(unique.flatMap((t) => t.tags || []))
   );
   labelImport.tagsSelected = [...labelImport.autoDetectedTags];
+  if (det?.likely && !labelImport.tagsSelected.some((t) => eqi(t, "credit card"))) {
+    labelImport.tagsSelected.push("credit card");
+  }
   labelImport.tagsQuery = "";
 }
 
 // Keep your existing cancel/close but ensure they continue the queue
 function cancelLabelImport() {
   labelImport.open = false;
+  currentLabelJob = null;
   // skip current and go to next
   nextTick(() => prepareNextImport());
 }
@@ -3879,6 +3971,7 @@ function confirmLabelImport() {
 
   // Close current modal and continue the queue
   labelImport.open = false;
+  currentLabelJob = null;
   nextTick(() => prepareNextImport());
 }
 

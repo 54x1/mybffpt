@@ -45,6 +45,27 @@
         }}
       </div>
 
+      <!-- Credit-card statement suggestion / override -->
+      <div v-if="showCreditCardControl" class="mt-3 rounded-lg border p-3"
+        :class="isCC ? 'border-primary/50 bg-primary/5' : 'border-base-300'">
+        <label class="cursor-pointer flex items-start gap-3">
+          <input type="checkbox" class="toggle toggle-primary mt-0.5" :checked="isCC"
+            @change="$emit('credit-card-mode', ($event.target as HTMLInputElement).checked ? 'force' : 'off')" />
+          <span>
+            <span class="block text-sm font-medium">💳 Credit card statement</span>
+            <span v-if="labelImport.creditCardDetected?.likely && labelImport.creditCardMode === 'force'"
+              class="block text-xs text-base-content/70 mt-0.5">
+              Detected automatically: {{ labelImport.creditCardDetected.signals.slice(0, 3).join("; ") }}.
+              Purchases count as spending; repayments are kept separate as Transfers. Untick if this is wrong.
+            </span>
+            <span v-else class="block text-xs text-base-content/70 mt-0.5">
+              Tick for credit-card exports: purchases become spending and repayments are recorded as
+              transfers instead of income.
+            </span>
+          </span>
+        </label>
+      </div>
+
       <!-- Tag selection for this import -->
       <div class="form-control mt-3">
         <label class="label" for="importTags">
@@ -106,9 +127,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch } from "vue";
+import { ref, computed, nextTick, watch } from "vue";
 import { eqi } from "../utils/text";
 import type { Transaction } from "../utils/types";
+import type { CreditCardDetection } from "../utils/types";
 import { useDialogA11y } from "../composables/useDialogA11y";
 
 const dialogRef = ref<HTMLDialogElement | null>(null);
@@ -122,12 +144,21 @@ interface LabelImportState {
   imported: Transaction[];
   tagsSelected: string[];
   tagsQuery: string;
+  creditCardMode: "auto" | "force" | "off";
+  creditCardDetected: CreditCardDetection | null;
 }
 
 const props = defineProps<{
   labelImport: LabelImportState;
   labelImportFilteredTags: string[];
 }>();
+
+// Show the control for CSV imports (fileText present ⇒ re-parseable) or when
+// detection already fired, so the user can always confirm/undo the suggestion.
+const showCreditCardControl = computed(
+  () => !!props.labelImport.creditCardDetected || props.labelImport.filename.toLowerCase().endsWith(".csv")
+);
+const isCC = computed(() => props.labelImport.creditCardMode === "force");
 
 // `<dialog>` stays invisible until `.showModal()` is called explicitly — the
 // `v-if` above only controls whether the element exists in the DOM, not
@@ -145,5 +176,6 @@ defineEmits<{
   (e: "confirm"): void;
   (e: "add-tag-from-query"): void;
   (e: "toggle-tag", tag: string): void;
+  (e: "credit-card-mode", mode: "force" | "off"): void;
 }>();
 </script>

@@ -91,4 +91,39 @@ export type InferredCols = {
   // "normal"           → positive = income, negative = spending
   // "expensesPositive" → positive = spending (some bank exports)
   amountConvention?: "normal" | "expensesPositive";
+
+  // Credit-card statement mode. When true the single-amount path treats every
+  // non-payment row as spending and flips the sign of payment rows, because
+  // card statements report purchases as positive balances owed rather than
+  // signed cash movements. Set by `detectCreditCardStatement`, never inferred
+  // from headers alone.
+  creditCard?: boolean;
+
+  // Index of the account-identifier column ("Bank Account", "Account Number").
+  account?: number;
+
+  // Per-account card mode: when an export mixes several accounts (Westpac
+  // combined exports), only rows whose account value appears in this list get
+  // credit-card sign logic. Takes effect per-row alongside `creditCard`.
+  creditCardAccounts?: string[];
+};
+
+// Result of inspecting a parsed CSV for credit-card-statement shape.
+export type CreditCardDetection = {
+  likely: boolean;
+  // Human-readable reasons (header hits, balance column, payment-heavy rows)
+  signals: string[];
+  // Fraction (0..1) of amount-bearing rows that look like repayments
+  repaymentRatio: number;
+  // When the export mixes several accounts and only some are cards, the card
+  // account identifiers (e.g. Westpac combined exports). Only rows whose
+  // account value is in this list should get credit-card sign logic.
+  cardAccounts?: string[];
+};
+
+// Options threaded from the import UI down into CSV parsing.
+export type CsvImportOptions = {
+  // "auto" detects credit-card statements and applies card sign logic;
+  // "force" applies it without detection; "off" disables both.
+  creditCardMode?: "auto" | "force" | "off";
 };
