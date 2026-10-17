@@ -387,6 +387,7 @@ import {
   isoToDDMMYYYY,
 } from "./utils/dates";
 import { autoCategoryFor, autoTagsFor, autoMergeTags } from "./utils/rules";
+import { linkInternalTransfers, TRANSFER_TAG } from "./utils/transfers";
 import {
   parseCSV,
   inferColumns,
@@ -3958,12 +3959,22 @@ function confirmLabelImport() {
   }
   if (added.length) {
     transactions.value = sortByDateDesc([...transactions.value, ...added]);
+    // Pair internal transfers (e.g. TFR out of everyday into a loan) across
+    // the WHOLE ledger — the two sides usually arrive in different files,
+    // possibly imported on different days.
+    const { pairs } = linkInternalTransfers(transactions.value);
     safeLocalStorageSet(LS_KEYS.tx, transactions.value);
     // OPTIMIZED: Extract categories after bulk import
     for (const t of added) {
       categorySet.add(t.category);
     }
     touchCategorySet();
+    if (pairs > 0) {
+      pushToast(
+        `Linked ${pairs} internal transfer pair${pairs === 1 ? "" : "s"} (tagged "${TRANSFER_TAG}")`,
+        "info"
+      );
+    }
   }
 
   lastImportSummary.value = `Imported ${added.length}/${labelImport.imported.length} new transactions from "${labelImport.filename}".`;

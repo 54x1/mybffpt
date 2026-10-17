@@ -19,6 +19,15 @@ All notable changes to this project are documented here. The format follows
   under the "Transfers" category (so they never inflate income or spending),
   and refunds/chargebacks stay income. Every card row is tagged
   `credit card` so card activity stays separable in reports and filters.
+- Internal-transfer pairing: after each import, same-day equal-amount rows
+  from two different sources where BOTH descriptions read as money movement
+  (TFR, TF/DR, EFT, "transfer to/from", BPAY) are paired into a single logical
+  transfer — category "Transfers" plus an `internal transfer` tag. This fixes
+  the double-count when Westpac exports e.g. a $500 everyday→loan payment as
+  one withdrawal and one deposit across two statements. Matching is strict:
+  coincidental merchant/deposit amount matches are never paired, pairing is
+  1:1 and idempotent, and it runs over the whole ledger so the two sides may
+  arrive in different files on different days.
 - Combined multi-account exports: when one CSV mixes accounts (e.g. a Westpac
   export containing the card plus everyday and loan accounts), credit-card sign
   logic applies per-row only to the detected card account(s); deposit and loan
