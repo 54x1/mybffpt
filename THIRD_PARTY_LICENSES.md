@@ -14,21 +14,21 @@ not part of the production distribution.
 |---|---|---|
 | @babel/helper-string-parser@7.29.7 | MIT | <https://github.com/babel/babel> |
 | @babel/helper-validator-identifier@7.29.7 | MIT | <https://github.com/babel/babel> |
-| @babel/parser@7.29.8 | MIT | <https://github.com/babel/babel> |
+| @babel/parser@7.29.9 | MIT | <https://github.com/babel/babel> |
 | @babel/types@7.29.8 | MIT | <https://github.com/babel/babel> |
-| @jridgewell/sourcemap-codec@1.5.5 | MIT | <https://github.com/jridgewell/sourcemaps> |
+| @jridgewell/sourcemap-codec@1.6.0 | MIT | <https://github.com/jridgewell/sourcemaps> |
 | @kurkle/color@0.3.4 | MIT | <https://github.com/kurkle/color> |
-| @napi-rs/canvas-win32-x64-msvc@1.0.9 | MIT | <https://github.com/Brooooooklyn/canvas> |
-| @napi-rs/canvas@1.0.9 | MIT | <https://github.com/Brooooooklyn/canvas> |
-| @vue/compiler-core@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/compiler-dom@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/compiler-sfc@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/compiler-ssr@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/reactivity@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/runtime-core@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/runtime-dom@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/server-renderer@3.5.41 | MIT | <https://github.com/vuejs/core> |
-| @vue/shared@3.5.41 | MIT | <https://github.com/vuejs/core> |
+| @napi-rs/canvas-linux-x64-gnu@1.0.11 | MIT | <https://github.com/Brooooooklyn/canvas> |
+| @napi-rs/canvas@1.0.11 | MIT | <https://github.com/Brooooooklyn/canvas> |
+| @vue/compiler-core@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/compiler-dom@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/compiler-sfc@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/compiler-ssr@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/reactivity@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/runtime-core@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/runtime-dom@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/server-renderer@3.5.44 | MIT | <https://github.com/vuejs/core> |
+| @vue/shared@3.5.44 | MIT | <https://github.com/vuejs/core> |
 | bmp-js@0.1.0 | MIT | <https://github.com/shaozilee/bmp-js> |
 | camelcase-css@2.0.1 | MIT | <https://github.com/stevenvachon/camelcase-css> |
 | chart.js@4.5.1 | MIT | <https://github.com/chartjs/Chart.js> |
@@ -78,22 +78,22 @@ not part of the production distribution.
 | internmap@2.0.3 | ISC | <https://github.com/mbostock/internmap> |
 | is-url@1.2.4 | MIT | <https://github.com/segmentio/is-url> |
 | magic-string@0.30.21 | MIT | <https://github.com/Rich-Harris/magic-string> |
-| nanoid@5.1.16 | MIT | <https://github.com/ai/nanoid> |
+| nanoid@6.0.2 | MIT | <https://github.com/ai/nanoid> |
 | opencollective-postinstall@2.0.3 | MIT | <https://github.com/opencollective/opencollective-postinstall> |
-| pdfjs-dist@6.3.289 | Apache-2.0 | <https://github.com/mozilla/pdf.js> |
+| pdfjs-dist@6.4.299 | Apache-2.0 | <https://github.com/mozilla/pdf.js> |
 | picocolors@1.1.1 | ISC | <https://github.com/alexeyraspopov/picocolors> |
-| postcss-js@4.0.1 | MIT | <https://github.com/postcss/postcss-js> |
-| postcss@8.5.26 | MIT | <https://github.com/postcss/postcss> |
+| postcss-js@4.1.0 | MIT | <https://github.com/postcss/postcss-js> |
+| postcss@8.5.30 | MIT | <https://github.com/postcss/postcss> |
 | regenerator-runtime@0.13.11 | MIT | <https://github.com/facebook/regenerator.git#main> |
 | robust-predicates@3.0.3 | Unlicense | <https://github.com/mourner/robust-predicates> |
 | rw@1.3.3 | BSD-3-Clause | <https://github.com/mbostock/rw> |
 | safer-buffer@2.1.2 | MIT | <https://github.com/ChALkeR/safer-buffer> |
-| source-map-js@1.2.1 | BSD-3-Clause | <https://github.com/7rulnik/source-map-js> |
+| source-map-js@1.2.2 | BSD-3-Clause | <https://github.com/7rulnik/source-map-js> |
 | tesseract.js-core@7.0.0 | Apache-2.0 | <https://github.com/naptha/tesseract.js-core> |
 | tesseract.js@7.0.0 | Apache-2.0 | <https://github.com/naptha/tesseract.js> |
 | typescript@5.9.3 | Apache-2.0 | <https://github.com/microsoft/TypeScript> |
 | vue-chartjs@5.3.4 | MIT | <https://github.com/apertureless/vue-chartjs> |
-| vue@3.5.41 | MIT | <https://github.com/vuejs/core> |
+| vue@3.5.44 | MIT | <https://github.com/vuejs/core> |
 | wasm-feature-detect@1.9.0 | Apache-2.0 | <https://github.com/GoogleChromeLabs/wasm-feature-detect> |
 | webidl-conversions@3.0.1 | BSD-2-Clause | <https://github.com/jsdom/webidl-conversions> |
 | zlibjs@0.3.1 | MIT | <https://github.com/imaya/zlib.js> |
@@ -102,22 +102,22 @@ not part of the production distribution.
 
 | Package | License | Repository |
 |---|---|---|
-| @alloc/quick-lru@5.2.0 | MIT | <https://github.com/sindresorhus/quick-lru> |
+| @alloc/quick-lru@5.3.0 | MIT | <https://github.com/aleclarson/quick-lru> |
 | @asamuzakjp/css-color@5.1.11 | MIT | <https://github.com/asamuzaK/cssColor> |
 | @asamuzakjp/dom-selector@7.1.1 | MIT | <https://github.com/asamuzaK/domSelector> |
 | @asamuzakjp/generational-cache@1.0.1 | MIT | <https://github.com/asamuzaK/generationalCache> |
 | @asamuzakjp/nwsapi@2.3.9 | MIT | <https://github.com/dperini/nwsapi> |
-| @axe-core/playwright@4.13.0 | MPL-2.0 | <https://github.com/dequelabs/axe-core-npm> |
+| @axe-core/playwright@4.14.0 | MPL-2.0 | <https://github.com/dequelabs/axe-core-npm> |
 | @bcoe/v8-coverage@1.0.2 | MIT | <https://github.com/bcoe/v8-coverage> |
-| @bramus/specificity@2.4.2 | MIT | <https://github.com/bramus/specificity> |
+| @bramus/specificity@2.4.3 | MIT | <https://github.com/bramus/specificity> |
 | @cacheable/memory@2.2.0 | MIT | <https://github.com/jaredwray/cacheable> |
 | @cacheable/utils@2.5.0 | MIT | <https://github.com/jaredwray/cacheable> |
-| @csstools/color-helpers@6.0.2 | MIT-0 | <https://github.com/csstools/postcss-plugins> |
-| @csstools/css-calc@3.2.1 | MIT | <https://github.com/csstools/postcss-plugins> |
-| @csstools/css-color-parser@4.1.1 | MIT | <https://github.com/csstools/postcss-plugins> |
-| @csstools/css-parser-algorithms@4.0.0 | MIT | <https://github.com/csstools/postcss-plugins> |
-| @csstools/css-syntax-patches-for-csstree@1.1.4 | MIT-0 | <https://github.com/csstools/postcss-plugins> |
-| @csstools/css-tokenizer@4.0.0 | MIT | <https://github.com/csstools/postcss-plugins> |
+| @csstools/color-helpers@6.1.2 | MIT-0 | <https://github.com/csstools/postcss-plugins> |
+| @csstools/css-calc@3.4.3 | MIT | <https://github.com/csstools/postcss-plugins> |
+| @csstools/css-color-parser@4.2.6 | MIT | <https://github.com/csstools/postcss-plugins> |
+| @csstools/css-parser-algorithms@4.0.2 | MIT | <https://github.com/csstools/postcss-plugins> |
+| @csstools/css-syntax-patches-for-csstree@1.1.15 | MIT-0 | <https://github.com/csstools/postcss-plugins> |
+| @csstools/css-tokenizer@4.0.2 | MIT | <https://github.com/csstools/postcss-plugins> |
 | @eslint-community/eslint-utils@4.10.1 | MIT | <https://github.com/eslint-community/eslint-utils> |
 | @eslint-community/regexpp@4.12.2 | MIT | <https://github.com/eslint-community/regexpp> |
 | @eslint/config-array@0.23.5 | Apache-2.0 | <https://github.com/eslint/rewrite> |
@@ -126,17 +126,16 @@ not part of the production distribution.
 | @eslint/js@10.0.1 | MIT | <https://github.com/eslint/eslint> |
 | @eslint/object-schema@3.0.5 | Apache-2.0 | <https://github.com/eslint/rewrite> |
 | @eslint/plugin-kit@0.7.3 | Apache-2.0 | <https://github.com/eslint/rewrite> |
-| @exodus/bytes@1.15.0 | MIT | <https://github.com/ExodusOSS/bytes> |
+| @exodus/bytes@1.16.0 | MIT | <https://github.com/ExodusOSS/bytes> |
 | @gar/promise-retry@1.0.3 | MIT | <https://github.com/wraithgar/node-promise-retry> |
 | @humanfs/core@0.19.2 | Apache-2.0 | <https://github.com/humanwhocodes/humanfs> |
 | @humanfs/node@0.16.8 | Apache-2.0 | <https://github.com/humanwhocodes/humanfs> |
 | @humanfs/types@0.15.0 | Apache-2.0 | <https://github.com/humanwhocodes/humanfs> |
 | @humanwhocodes/module-importer@1.0.1 | Apache-2.0 | <https://github.com/humanwhocodes/module-importer> |
 | @humanwhocodes/retry@0.4.3 | Apache-2.0 | <https://github.com/humanwhocodes/retry> |
-| @isaacs/cliui@8.0.2 | ISC | <https://github.com/yargs/cliui> |
 | @isaacs/fs-minipass@4.0.1 | ISC | <https://github.com/npm/fs-minipass> |
 | @isaacs/string-locale-compare@1.1.0 | ISC | <https://github.com/isaacs/string-locale-compare> |
-| @jridgewell/gen-mapping@0.3.12 | MIT | <https://github.com/jridgewell/sourcemaps> |
+| @jridgewell/gen-mapping@0.3.13 | MIT | <https://github.com/jridgewell/sourcemaps> |
 | @jridgewell/resolve-uri@3.1.2 | MIT | <https://github.com/jridgewell/resolve-uri> |
 | @jridgewell/trace-mapping@0.3.31 | MIT | <https://github.com/jridgewell/sourcemaps> |
 | @keyv/bigmap@1.3.1 | MIT | <https://github.com/jaredwray/keyv> |
@@ -158,10 +157,9 @@ not part of the production distribution.
 | @npmcli/query@5.0.0 | ISC | <https://github.com/npm/query> |
 | @npmcli/redact@4.0.0 | ISC | <https://github.com/npm/redact> |
 | @npmcli/run-script@10.0.4 | ISC | <https://github.com/npm/run-script> |
-| @one-ini/wasm@0.1.1 | MIT | <https://github.com/one-ini/core> |
-| @oxc-project/types@0.146.0 | MIT | <https://github.com/oxc-project/oxc> |
-| @pkgjs/parseargs@0.11.0 | MIT | <https://github.com/pkgjs/parseargs> |
-| @playwright/test@1.62.1 | Apache-2.0 | <https://github.com/microsoft/playwright> |
+| @one-ini/wasm@0.2.1 | MIT | <https://github.com/one-ini/core> |
+| @oxc-project/types@0.154.0 | MIT | <https://github.com/oxc-project/oxc> |
+| @playwright/test@1.64.1 | Apache-2.0 | <https://github.com/microsoft/playwright> |
 | @rolldown/pluginutils@1.0.1 | MIT | <https://github.com/rolldown/plugins> |
 | @sigstore/bundle@4.0.0 | Apache-2.0 | <https://github.com/sigstore/sigstore-js> |
 | @sigstore/core@3.2.1 | Apache-2.0 | <https://github.com/sigstore/sigstore-js> |
@@ -188,39 +186,39 @@ not part of the production distribution.
 | @types/d3-fetch@3.0.7 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-force@3.0.10 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-format@3.0.4 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @types/d3-geo@3.1.0 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
+| @types/d3-geo@3.1.1 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-hierarchy@3.1.7 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-interpolate@3.0.4 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-path@3.1.1 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-polygon@3.0.2 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-quadtree@3.0.6 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @types/d3-random@3.0.3 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
+| @types/d3-random@3.0.4 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-scale-chromatic@3.1.0 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-scale@4.0.9 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @types/d3-selection@3.0.11 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @types/d3-shape@3.1.8 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
+| @types/d3-selection@3.0.12 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
+| @types/d3-shape@3.2.0 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-time-format@4.0.3 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-time@3.0.4 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-timer@3.0.2 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3-transition@3.0.9 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @types/d3-zoom@3.0.8 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
+| @types/d3-zoom@3.0.9 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/d3@7.4.3 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/deep-eql@4.0.2 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/esrecurse@4.3.1 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @types/estree@1.0.8 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
+| @types/estree@1.0.9 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/geojson@7946.0.16 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
 | @types/json-schema@7.0.15 | MIT | <https://github.com/DefinitelyTyped/DefinitelyTyped> |
-| @typescript-eslint/eslint-plugin@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/parser@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/project-service@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/scope-manager@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/tsconfig-utils@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/type-utils@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/types@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/typescript-estree@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/utils@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @typescript-eslint/visitor-keys@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| @vitejs/plugin-vue@6.0.8 | MIT | <https://github.com/vitejs/vite-plugin-vue> |
+| @typescript-eslint/eslint-plugin@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/parser@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/project-service@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/scope-manager@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/tsconfig-utils@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/type-utils@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/types@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/typescript-estree@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/utils@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @typescript-eslint/visitor-keys@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| @vitejs/plugin-vue@6.0.10 | MIT | <https://github.com/vitejs/vite-plugin-vue> |
 | @vitest/coverage-v8@4.1.11 | MIT | <https://github.com/vitest-dev/vitest> |
 | @vitest/expect@4.1.11 | MIT | <https://github.com/vitest-dev/vitest> |
 | @vitest/mocker@4.1.11 | MIT | <https://github.com/vitest-dev/vitest> |
@@ -233,49 +231,44 @@ not part of the production distribution.
 | @volar/source-map@2.4.28 | MIT | <https://github.com/volarjs/volar.js> |
 | @volar/typescript@2.4.28 | MIT | <https://github.com/volarjs/volar.js> |
 | @vue/language-core@3.3.11 | MIT | <https://github.com/vuejs/language-tools> |
-| @vue/test-utils@2.4.11 | MIT | <https://github.com/vuejs/test-utils> |
+| @vue/test-utils@2.5.1 | MIT | <https://github.com/vuejs/test-utils> |
 | abbrev@2.0.0 | ISC | <https://github.com/npm/abbrev-js> |
 | abbrev@4.0.0 | ISC | <https://github.com/npm/abbrev-js> |
+| abbrev@5.0.0 | ISC | <https://github.com/npm/abbrev-js> |
 | acorn-jsx@5.3.2 | MIT | <https://github.com/acornjs/acorn-jsx> |
-| acorn@8.18.0 | MIT | <https://github.com/acornjs/acorn> |
+| acorn@8.19.0 | MIT | <https://github.com/acornjs/acorn> |
 | agent-base@7.1.4 | MIT | <https://github.com/TooTallNate/proxy-agents> |
 | ajv@6.15.0 | MIT | <https://github.com/ajv-validator/ajv> |
 | alien-signals@3.2.1 | MIT | <https://github.com/stackblitz/alien-signals> |
-| ansi-regex@5.0.1 | MIT | <https://github.com/chalk/ansi-regex> |
-| ansi-regex@6.1.0 | MIT | <https://github.com/chalk/ansi-regex> |
 | ansi-styles@4.3.0 | MIT | <https://github.com/chalk/ansi-styles> |
-| ansi-styles@6.2.1 | MIT | <https://github.com/chalk/ansi-styles> |
 | any-promise@1.3.0 | MIT | <https://github.com/kevinbeaty/any-promise> |
 | anymatch@3.1.3 | ISC | <https://github.com/micromatch/anymatch> |
 | arg@5.0.2 | MIT | <https://github.com/vercel/arg> |
 | array-find-index@1.0.2 | MIT | <https://github.com/sindresorhus/array-find-index> |
 | assertion-error@2.0.1 | MIT | <https://github.com/chaijs/assertion-error> |
-| ast-v8-to-istanbul@1.0.0 | MIT | <https://github.com/AriPerkkio/ast-v8-to-istanbul> |
-| autoprefixer@10.5.4 | MIT | <https://github.com/postcss/autoprefixer> |
-| axe-core@4.13.0 | MPL-2.0 | <https://github.com/dequelabs/axe-core> |
-| balanced-match@1.0.2 | MIT | <https://github.com/juliangruber/balanced-match> |
+| ast-v8-to-istanbul@1.0.7 | MIT | <https://github.com/AriPerkkio/ast-v8-to-istanbul> |
+| autoprefixer@10.6.1 | MIT | <https://github.com/postcss/autoprefixer> |
+| axe-core@4.14.0 | MPL-2.0 | <https://github.com/dequelabs/axe-core> |
 | balanced-match@4.0.4 | MIT | <https://github.com/juliangruber/balanced-match> |
-| baseline-browser-mapping@2.11.18 | Apache-2.0 | <https://github.com/web-platform-dx/baseline-browser-mapping> |
-| bidi-js@1.0.3 | MIT | <https://github.com/lojjic/bidi-js> |
+| baseline-browser-mapping@2.11.29 | Apache-2.0 | <https://github.com/web-platform-dx/baseline-browser-mapping> |
+| bidi-js@1.1.0 | MIT | <https://github.com/lojjic/bidi-js> |
 | bin-links@6.0.2 | ISC | <https://github.com/npm/bin-links> |
 | binary-extensions@2.3.0 | MIT | <https://github.com/sindresorhus/binary-extensions> |
 | boolbase@1.0.0 | ISC | <https://github.com/fb55/boolbase> |
-| brace-expansion@2.1.4 | MIT | <https://github.com/juliangruber/brace-expansion> |
 | brace-expansion@5.0.12 | MIT | <https://github.com/juliangruber/brace-expansion> |
-| brace-expansion@5.0.9 | MIT | <https://github.com/juliangruber/brace-expansion> |
 | braces@3.0.3 | MIT | <https://github.com/micromatch/braces> |
-| browserslist@4.28.8 | MIT | <https://github.com/browserslist/browserslist> |
+| browserslist@4.29.3 | MIT | <https://github.com/browserslist/browserslist> |
 | cacache@20.0.4 | ISC | <https://github.com/npm/cacache> |
 | cacheable@2.5.0 | MIT | <https://github.com/jaredwray/cacheable> |
-| caniuse-lite@1.0.30001809 | CC-BY-4.0 | <https://github.com/browserslist/caniuse-lite> |
-| chai@6.2.2 | MIT | <https://github.com/chaijs/chai> |
+| caniuse-lite@1.0.30001816 | CC-BY-4.0 | <https://github.com/browserslist/caniuse-lite> |
+| chai@6.3.0 | MIT | <https://github.com/chaijs/chai> |
 | chalk@4.1.2 | MIT | <https://github.com/chalk/chalk> |
 | chokidar@3.6.0 | MIT | <https://github.com/paulmillr/chokidar> |
 | chownr@3.0.0 | BlueOak-1.0.0 | <https://github.com/isaacs/chownr> |
 | cmd-shim@8.0.0 | ISC | <https://github.com/npm/cmd-shim> |
 | color-convert@2.0.1 | MIT | <https://github.com/Qix-/color-convert> |
 | color-name@1.1.4 | MIT | <https://github.com/colorjs/color-name> |
-| commander@10.0.1 | MIT | <https://github.com/tj/commander.js> |
+| commander@14.0.3 | MIT | <https://github.com/tj/commander.js> |
 | commander@4.1.1 | MIT | <https://github.com/tj/commander.js> |
 | common-ancestor-path@2.0.0 | BlueOak-1.0.0 | <https://github.com/isaacs/common-ancestor-path> |
 | config-chain@1.1.13 | MIT | <https://github.com/dominictarr/config-chain> |
@@ -290,73 +283,68 @@ not part of the production distribution.
 | detect-libc@2.1.2 | Apache-2.0 | <https://github.com/lovell/detect-libc> |
 | didyoumean@1.2.2 | Apache-2.0 | <https://github.com/dcporter/didyoumean.js> |
 | dlv@1.1.3 | MIT | <https://github.com/developit/dlv> |
-| eastasianwidth@0.2.0 | MIT | <https://github.com/komagata/eastasianwidth> |
-| editorconfig@1.0.7 | MIT | <https://github.com/editorconfig/editorconfig-core-js> |
-| electron-to-chromium@1.5.412 | ISC | <https://github.com/Kilian/electron-to-chromium> |
-| emoji-regex@8.0.0 | MIT | <https://github.com/mathiasbynens/emoji-regex> |
-| emoji-regex@9.2.2 | MIT | <https://github.com/mathiasbynens/emoji-regex> |
-| entities@8.0.0 | BSD-2-Clause | <https://github.com/fb55/entities> |
+| editorconfig@3.0.2 | MIT | <https://github.com/editorconfig/editorconfig-core-js> |
+| electron-to-chromium@1.5.458 | ISC | <https://github.com/Kilian/electron-to-chromium> |
+| entities@8.1.0 | BSD-2-Clause | <https://github.com/fb55/entities> |
 | env-paths@2.2.1 | MIT | <https://github.com/sindresorhus/env-paths> |
-| es-module-lexer@2.1.0 | MIT | <https://github.com/guybedford/es-module-lexer> |
+| es-errors@1.3.0 | MIT | <https://github.com/ljharb/es-errors> |
+| es-module-lexer@2.3.2 | MIT | <https://github.com/guybedford/es-module-lexer> |
 | escalade@3.2.0 | MIT | <https://github.com/lukeed/escalade> |
 | escape-string-regexp@4.0.0 | MIT | <https://github.com/sindresorhus/escape-string-regexp> |
-| eslint-plugin-vue@10.11.0 | MIT | <https://github.com/vuejs/eslint-plugin-vue> |
+| eslint-plugin-vue@10.11.1 | MIT | <https://github.com/vuejs/eslint-plugin-vue> |
 | eslint-scope@9.1.2 | BSD-2-Clause | <https://github.com/eslint/js> |
 | eslint-visitor-keys@3.4.3 | Apache-2.0 | <https://github.com/eslint/eslint-visitor-keys> |
 | eslint-visitor-keys@5.0.1 | Apache-2.0 | <https://github.com/eslint/js> |
-| eslint@10.11.0 | MIT | <https://github.com/eslint/eslint> |
+| eslint@10.13.0 | MIT | <https://github.com/eslint/eslint> |
 | espree@11.2.0 | BSD-2-Clause | <https://github.com/eslint/js> |
 | esquery@1.7.0 | BSD-3-Clause | <https://github.com/estools/esquery> |
 | esrecurse@4.3.0 | BSD-2-Clause | <https://github.com/estools/esrecurse> |
 | estraverse@5.3.0 | BSD-2-Clause | <https://github.com/estools/estraverse> |
 | estree-walker@3.0.3 | MIT | <https://github.com/Rich-Harris/estree-walker> |
 | esutils@2.0.3 | BSD-2-Clause | <https://github.com/estools/esutils> |
-| expect-type@1.3.0 | Apache-2.0 | <https://github.com/mmkal/expect-type> |
+| expect-type@1.4.0 | Apache-2.0 | <https://github.com/mmkal/expect-type> |
 | exponential-backoff@3.1.3 | Apache-2.0 | <https://github.com/coveooss/exponential-backoff> |
 | fast-deep-equal@3.1.3 | MIT | <https://github.com/epoberezkin/fast-deep-equal> |
 | fast-glob@3.3.3 | MIT | <https://github.com/mrmlnc/fast-glob> |
 | fast-json-stable-stringify@2.1.0 | MIT | <https://github.com/epoberezkin/fast-json-stable-stringify> |
 | fast-levenshtein@2.0.6 | MIT | <https://github.com/hiddentao/fast-levenshtein> |
-| fastq@1.19.1 | ISC | <https://github.com/mcollina/fastq> |
+| fastq@1.20.3 | ISC | <https://github.com/mcollina/fastq> |
 | fdir@6.5.0 | MIT | <https://github.com/thecodrr/fdir> |
 | file-entry-cache@11.1.5 | MIT | <https://github.com/jaredwray/cacheable> |
 | fill-range@7.1.1 | MIT | <https://github.com/jonschlinkert/fill-range> |
 | find-up@5.0.0 | MIT | <https://github.com/sindresorhus/find-up> |
 | flat-cache@6.1.23 | MIT | <https://github.com/jaredwray/cacheable> |
 | flatted@3.4.4 | ISC | <https://github.com/WebReflection/flatted> |
-| foreground-child@3.3.1 | ISC | <https://github.com/tapjs/foreground-child> |
 | fraction.js@5.3.4 | MIT | <https://github.com/rawify/Fraction.js> |
 | fs-minipass@3.0.3 | ISC | <https://github.com/npm/fs-minipass> |
 | function-bind@1.1.2 | MIT | <https://github.com/Raynos/function-bind> |
 | glob-parent@5.1.2 | ISC | <https://github.com/gulpjs/glob-parent> |
 | glob-parent@6.0.2 | ISC | <https://github.com/gulpjs/glob-parent> |
-| glob@10.5.0 | ISC | <https://github.com/isaacs/node-glob> |
 | glob@13.0.6 | BlueOak-1.0.0 | <https://github.com/isaacs/node-glob> |
-| globals@17.12.0 | MIT | <https://github.com/sindresorhus/globals> |
+| globals@17.13.0 | MIT | <https://github.com/sindresorhus/globals> |
 | graceful-fs@4.2.11 | ISC | <https://github.com/isaacs/node-graceful-fs> |
 | has-flag@4.0.0 | MIT | <https://github.com/sindresorhus/has-flag> |
 | hashery@1.5.1 | MIT | <https://github.com/jaredwray/hashery> |
-| hasown@2.0.2 | MIT | <https://github.com/inspect-js/hasOwn> |
+| hasown@2.0.4 | MIT | <https://github.com/inspect-js/hasOwn> |
 | hookified@1.15.1 | MIT | <https://github.com/jaredwray/hookified> |
 | hookified@2.2.0 | MIT | <https://github.com/jaredwray/hookified> |
 | hosted-git-info@9.0.3 | ISC | <https://github.com/npm/hosted-git-info> |
 | html-encoding-sniffer@6.0.0 | MIT | <https://github.com/jsdom/html-encoding-sniffer> |
 | html-escaper@2.0.2 | MIT | <https://github.com/WebReflection/html-escaper> |
-| http-cache-semantics@4.2.0 | BSD-2-Clause | <https://github.com/kornelski/http-cache-semantics> |
+| http-cache-semantics@4.3.0 | BSD-2-Clause | <https://github.com/kornelski/http-cache-semantics> |
 | http-proxy-agent@7.0.2 | MIT | <https://github.com/TooTallNate/proxy-agents> |
 | https-proxy-agent@7.0.6 | MIT | <https://github.com/TooTallNate/proxy-agents> |
 | iconv-lite@0.7.3 | MIT | <https://github.com/pillarjs/iconv-lite> |
 | ignore-walk@8.0.0 | ISC | <https://github.com/npm/ignore-walk> |
 | ignore@5.3.2 | MIT | <https://github.com/kaelzhang/node-ignore> |
-| ignore@7.0.9 | MIT | <https://github.com/kaelzhang/node-ignore> |
+| ignore@7.0.12 | MIT | <https://github.com/kaelzhang/node-ignore> |
 | imurmurhash@0.1.4 | MIT | <https://github.com/jensyt/imurmurhash-js> |
 | ini@1.3.8 | ISC | <https://github.com/isaacs/ini> |
 | ini@6.0.0 | ISC | <https://github.com/npm/ini> |
-| ip-address@10.5.0 | MIT | <https://github.com/beaugunderson/ip-address> |
+| ip-address@10.7.4 | MIT | <https://github.com/beaugunderson/ip-address> |
 | is-binary-path@2.1.0 | MIT | <https://github.com/sindresorhus/is-binary-path> |
-| is-core-module@2.16.1 | MIT | <https://github.com/inspect-js/is-core-module> |
+| is-core-module@2.17.0 | MIT | <https://github.com/inspect-js/is-core-module> |
 | is-extglob@2.1.1 | MIT | <https://github.com/jonschlinkert/is-extglob> |
-| is-fullwidth-code-point@3.0.0 | MIT | <https://github.com/sindresorhus/is-fullwidth-code-point> |
 | is-glob@4.0.3 | MIT | <https://github.com/micromatch/is-glob> |
 | is-number@7.0.0 | MIT | <https://github.com/jonschlinkert/is-number> |
 | is-potential-custom-element-name@1.0.1 | MIT | <https://github.com/mathiasbynens/is-potential-custom-element-name> |
@@ -365,10 +353,9 @@ not part of the production distribution.
 | istanbul-lib-coverage@3.2.2 | BSD-3-Clause | <https://github.com/istanbuljs/istanbuljs> |
 | istanbul-lib-report@3.0.1 | BSD-3-Clause | <https://github.com/istanbuljs/istanbuljs> |
 | istanbul-reports@3.2.0 | BSD-3-Clause | <https://github.com/istanbuljs/istanbuljs> |
-| jackspeak@3.4.3 | BlueOak-1.0.0 | <https://github.com/isaacs/jackspeak> |
 | jiti@1.21.7 | MIT | <https://github.com/unjs/jiti> |
-| js-beautify@1.15.4 | MIT | <https://github.com/beautifier/js-beautify> |
-| js-cookie@3.0.7 | MIT | <https://github.com/js-cookie/js-cookie> |
+| js-beautify@2.0.3 | MIT | <https://github.com/beautifier/js-beautify> |
+| js-cookie@3.0.8 | MIT | <https://github.com/js-cookie/js-cookie> |
 | js-tokens@10.0.0 | MIT | <https://github.com/lydell/js-tokens> |
 | jsdom@29.1.1 | MIT | <https://github.com/jsdom/jsdom> |
 | json-parse-even-better-errors@5.0.0 | MIT | <https://github.com/npm/json-parse-even-better-errors> |
@@ -382,21 +369,18 @@ not part of the production distribution.
 | levn@0.4.1 | MIT | <https://github.com/gkz/levn> |
 | license-checker-rseidelsohn@5.0.1 | BSD-3-Clause | <https://github.com/RSeidelsohn/license-checker-rseidelsohn> |
 | lightningcss@1.33.0 | MPL-2.0 | <https://github.com/parcel-bundler/lightningcss> |
-| lilconfig@3.1.3 | MIT | <https://github.com/antonk52/lilconfig> |
+| lilconfig@3.1.4 | MIT | <https://github.com/antonk52/lilconfig> |
 | lines-and-columns@1.2.4 | MIT | <https://github.com/eventualbuddha/lines-and-columns> |
 | locate-path@6.0.0 | MIT | <https://github.com/sindresorhus/locate-path> |
 | lodash.clonedeep@4.5.0 | MIT | <https://github.com/lodash/lodash> |
-| lru-cache@10.4.3 | ISC | <https://github.com/isaacs/node-lru-cache> |
-| lru-cache@11.4.0 | BlueOak-1.0.0 | <https://github.com/isaacs/node-lru-cache> |
-| lru-cache@11.5.2 | BlueOak-1.0.0 | <https://github.com/isaacs/node-lru-cache> |
-| magicast@0.5.3 | MIT | <https://github.com/unjs/magicast> |
+| lru-cache@11.5.3 | BlueOak-1.0.0 | <https://github.com/isaacs/node-lru-cache> |
+| magicast@0.5.5 | MIT | <https://github.com/unjs/magicast> |
 | make-dir@4.0.0 | MIT | <https://github.com/sindresorhus/make-dir> |
 | make-fetch-happen@15.0.6 | ISC | <https://github.com/npm/make-fetch-happen> |
 | mdn-data@2.27.1 | CC0-1.0 | <https://github.com/mdn/data> |
 | merge2@1.4.1 | MIT | <https://github.com/teambition/merge2> |
 | micromatch@4.0.8 | MIT | <https://github.com/micromatch/micromatch> |
 | minimatch@10.2.6 | BlueOak-1.0.0 | <https://github.com/isaacs/minimatch> |
-| minimatch@9.0.9 | ISC | <https://github.com/isaacs/minimatch> |
 | minipass-collect@2.0.1 | ISC | <https://github.com/isaacs/minipass-collect> |
 | minipass-fetch@5.0.2 | MIT | <https://github.com/npm/minipass-fetch> |
 | minipass-flush@1.0.7 | BlueOak-1.0.0 | <https://github.com/isaacs/minipass-flush> |
@@ -413,7 +397,8 @@ not part of the production distribution.
 | negotiator@1.1.0 | MIT | <https://github.com/jshttp/negotiator> |
 | node-fetch@2.7.0 | MIT | <https://github.com/bitinn/node-fetch> |
 | node-gyp@12.4.0 | MIT | <https://github.com/nodejs/node-gyp> |
-| node-releases@2.0.53 | MIT | <https://github.com/chicoxyzzy/node-releases> |
+| node-releases@2.0.59 | MIT | <https://github.com/chicoxyzzy/node-releases> |
+| nopt@10.0.1 | ISC | <https://github.com/npm/nopt> |
 | nopt@7.2.1 | ISC | <https://github.com/npm/nopt> |
 | nopt@9.0.0 | ISC | <https://github.com/npm/nopt> |
 | normalize-path@3.0.0 | MIT | <https://github.com/jonschlinkert/normalize-path> |
@@ -427,12 +412,11 @@ not part of the production distribution.
 | nth-check@2.1.1 | BSD-2-Clause | <https://github.com/fb55/nth-check> |
 | object-assign@4.1.1 | MIT | <https://github.com/sindresorhus/object-assign> |
 | object-hash@3.0.0 | MIT | <https://github.com/puleos/object-hash> |
-| obug@2.1.1 | MIT | <https://github.com/sxzz/obug> |
+| obug@2.2.1 | MIT | <https://github.com/sxzz/obug> |
 | optionator@0.9.4 | MIT | <https://github.com/gkz/optionator> |
 | p-limit@3.1.0 | MIT | <https://github.com/sindresorhus/p-limit> |
 | p-locate@5.0.0 | MIT | <https://github.com/sindresorhus/p-locate> |
-| p-map@7.0.6 | MIT | <https://github.com/sindresorhus/p-map> |
-| package-json-from-dist@1.0.1 | BlueOak-1.0.0 | <https://github.com/isaacs/package-json-from-dist> |
+| p-map@7.1.1 | MIT | <https://github.com/sindresorhus/p-map> |
 | pacote@21.5.1 | ISC | <https://github.com/npm/pacote> |
 | parse-conflict-json@5.0.1 | ISC | <https://github.com/npm/parse-conflict-json> |
 | parse5@8.0.1 | MIT | <https://github.com/inikulin/parse5> |
@@ -440,21 +424,17 @@ not part of the production distribution.
 | path-exists@4.0.0 | MIT | <https://github.com/sindresorhus/path-exists> |
 | path-key@3.1.1 | MIT | <https://github.com/sindresorhus/path-key> |
 | path-parse@1.0.7 | MIT | <https://github.com/jbgutierrez/path-parse> |
-| path-scurry@1.11.1 | BlueOak-1.0.0 | <https://github.com/isaacs/path-scurry> |
 | path-scurry@2.0.2 | BlueOak-1.0.0 | <https://github.com/isaacs/path-scurry> |
 | pathe@2.0.3 | MIT | <https://github.com/unjs/pathe> |
 | picomatch@2.3.2 | MIT | <https://github.com/micromatch/picomatch> |
-| picomatch@4.0.4 | MIT | <https://github.com/micromatch/picomatch> |
-| picomatch@4.0.5 | MIT | <https://github.com/micromatch/picomatch> |
-| pify@2.3.0 | MIT | <https://github.com/sindresorhus/pify> |
+| picomatch@4.0.7 | MIT | <https://github.com/micromatch/picomatch> |
 | pirates@4.0.7 | MIT | <https://github.com/danez/pirates> |
-| playwright-core@1.62.1 | Apache-2.0 | <https://github.com/microsoft/playwright> |
-| playwright@1.62.1 | Apache-2.0 | <https://github.com/microsoft/playwright> |
+| playwright-core@1.64.1 | Apache-2.0 | <https://github.com/microsoft/playwright> |
+| playwright@1.64.1 | Apache-2.0 | <https://github.com/microsoft/playwright> |
 | postcss-import@15.1.0 | MIT | <https://github.com/postcss/postcss-import> |
-| postcss-load-config@4.0.2 | MIT | <https://github.com/postcss/postcss-load-config> |
+| postcss-load-config@6.0.1 | MIT | <https://github.com/postcss/postcss-load-config> |
 | postcss-nested@6.2.0 | MIT | <https://github.com/postcss/postcss-nested> |
 | postcss-selector-parser@6.1.4 | MIT | <https://github.com/postcss/postcss-selector-parser> |
-| postcss-selector-parser@7.1.5 | MIT | <https://github.com/postcss/postcss-selector-parser> |
 | postcss-selector-parser@7.1.6 | MIT | <https://github.com/postcss/postcss-selector-parser> |
 | postcss-value-parser@4.2.0 | MIT | <https://github.com/TrySound/postcss-value-parser> |
 | prelude-ls@1.2.1 | MIT | <https://github.com/gkz/prelude-ls> |
@@ -466,13 +446,13 @@ not part of the production distribution.
 | punycode@2.3.1 | MIT | <https://github.com/mathiasbynens/punycode.js> |
 | qified@0.10.1 | MIT | <https://github.com/jaredwray/qified> |
 | queue-microtask@1.2.3 | MIT | <https://github.com/feross/queue-microtask> |
-| read-cache@1.0.0 | MIT | <https://github.com/TrySound/read-cache> |
+| read-cache@1.0.2 | MIT | <https://github.com/TrySound/read-cache> |
 | read-cmd-shim@6.0.0 | ISC | <https://github.com/npm/read-cmd-shim> |
 | readdirp@3.6.0 | MIT | <https://github.com/paulmillr/readdirp> |
 | require-from-string@2.0.2 | MIT | <https://github.com/floatdrop/require-from-string> |
-| resolve@1.22.10 | MIT | <https://github.com/browserify/resolve> |
+| resolve@1.22.13 | MIT | <https://github.com/browserify/resolve> |
 | reusify@1.1.0 | MIT | <https://github.com/mcollina/reusify> |
-| rolldown@1.2.5 | MIT | <https://github.com/rolldown/rolldown> |
+| rolldown@1.2.14 | MIT | <https://github.com/rolldown/rolldown> |
 | run-parallel@1.2.0 | MIT | <https://github.com/feross/run-parallel> |
 | saxes@6.0.0 | ISC | <https://github.com/lddubeau/saxes> |
 | semver@7.8.5 | ISC | <https://github.com/npm/node-semver> |
@@ -483,23 +463,19 @@ not part of the production distribution.
 | sigstore@4.1.1 | Apache-2.0 | <https://github.com/sigstore/sigstore-js> |
 | smart-buffer@4.2.0 | MIT | <https://github.com/JoshGlazebrook/smart-buffer> |
 | socks-proxy-agent@8.0.5 | MIT | <https://github.com/TooTallNate/proxy-agents> |
-| socks@2.8.9 | MIT | <https://github.com/JoshGlazebrook/socks> |
+| socks@2.8.10 | MIT | <https://github.com/JoshGlazebrook/socks> |
 | spdx-compare@1.0.0 | MIT | <https://github.com/kemitchell/spdx-compare.js> |
 | spdx-correct@3.2.0 | Apache-2.0 | <https://github.com/jslicense/spdx-correct.js> |
 | spdx-exceptions@2.5.0 | CC-BY-3.0 | <https://github.com/kemitchell/spdx-exceptions.json> |
 | spdx-expression-parse@3.0.1 | MIT | <https://github.com/jslicense/spdx-expression-parse.js> |
 | spdx-expression-parse@4.0.0 | MIT | <https://github.com/jslicense/spdx-expression-parse.js> |
-| spdx-license-ids@3.0.23 | CC0-1.0 | <https://github.com/jslicense/spdx-license-ids> |
+| spdx-license-ids@3.0.24 | CC0-1.0 | <https://github.com/jslicense/spdx-license-ids> |
 | spdx-ranges@2.1.1 | (MIT AND CC-BY-3.0) | <https://github.com/kemitchell/spdx-ranges.js> |
 | spdx-satisfies@6.0.0 | MIT | <https://github.com/kemitchell/spdx-satisfies.js> |
 | ssri@13.0.1 | ISC | <https://github.com/npm/ssri> |
 | stackback@0.0.2 | MIT | <https://github.com/shtylman/node-stackback> |
-| std-env@4.1.0 | MIT | <https://github.com/unjs/std-env> |
-| string-width@4.2.3 | MIT | <https://github.com/sindresorhus/string-width> |
-| string-width@5.1.2 | MIT | <https://github.com/sindresorhus/string-width> |
-| strip-ansi@6.0.1 | MIT | <https://github.com/chalk/strip-ansi> |
-| strip-ansi@7.1.0 | MIT | <https://github.com/chalk/strip-ansi> |
-| sucrase@3.35.0 | MIT | <https://github.com/alangpierce/sucrase> |
+| std-env@4.3.0 | MIT | <https://github.com/unjs/std-env> |
+| sucrase@3.35.1 | MIT | <https://github.com/alangpierce/sucrase> |
 | supports-color@7.2.0 | MIT | <https://github.com/chalk/supports-color> |
 | supports-preserve-symlinks-flag@1.0.0 | MIT | <https://github.com/inspect-js/node-supports-preserve-symlinks-flag> |
 | symbol-tree@3.2.4 | MIT | <https://github.com/jsdom/js-symbol-tree> |
@@ -508,13 +484,13 @@ not part of the production distribution.
 | thenify-all@1.6.0 | MIT | <https://github.com/thenables/thenify-all> |
 | thenify@3.3.1 | MIT | <https://github.com/thenables/thenify> |
 | tinybench@2.9.0 | MIT | <https://github.com/tinylibs/tinybench> |
-| tinyexec@1.1.2 | MIT | <https://github.com/tinylibs/tinyexec> |
+| tinyexec@1.3.1 | MIT | <https://github.com/tinylibs/tinyexec> |
 | tinyglobby@0.2.17 | MIT | <https://github.com/SuperchupuDev/tinyglobby> |
-| tinyrainbow@3.1.0 | MIT | <https://github.com/tinylibs/tinyrainbow> |
-| tldts-core@7.0.30 | MIT | <https://github.com/remusao/tldts> |
-| tldts@7.0.30 | MIT | <https://github.com/remusao/tldts> |
+| tinyrainbow@3.2.0 | MIT | <https://github.com/tinylibs/tinyrainbow> |
+| tldts-core@7.4.18 | MIT | <https://github.com/remusao/tldts> |
+| tldts@7.4.18 | MIT | <https://github.com/remusao/tldts> |
 | to-regex-range@5.0.1 | MIT | <https://github.com/micromatch/to-regex-range> |
-| tough-cookie@6.0.1 | BSD-3-Clause | <https://github.com/salesforce/tough-cookie> |
+| tough-cookie@6.0.2 | BSD-3-Clause | <https://github.com/salesforce/tough-cookie> |
 | tr46@0.0.3 | MIT | <https://github.com/Sebmaster/tr46.js> |
 | tr46@6.0.0 | MIT | <https://github.com/jsdom/tr46> |
 | treeify@1.1.0 | MIT | <https://github.com/notatestuser/treeify> |
@@ -523,17 +499,17 @@ not part of the production distribution.
 | ts-interface-checker@0.1.13 | Apache-2.0 | <https://github.com/gristlabs/ts-interface-checker> |
 | tuf-js@4.1.0 | MIT | <https://github.com/theupdateframework/tuf-js> |
 | type-check@0.4.0 | MIT | <https://github.com/gkz/type-check> |
-| typescript-eslint@8.70.0 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
-| undici@6.28.0 | MIT | <https://github.com/nodejs/undici> |
-| undici@7.29.0 | MIT | <https://github.com/nodejs/undici> |
-| update-browserslist-db@1.3.1 | MIT | <https://github.com/browserslist/update-db> |
+| typescript-eslint@8.71.2 | MIT | <https://github.com/typescript-eslint/typescript-eslint> |
+| undici@6.29.1 | MIT | <https://github.com/nodejs/undici> |
+| undici@7.30.1 | MIT | <https://github.com/nodejs/undici> |
+| update-browserslist-db@1.3.4 | MIT | <https://github.com/browserslist/update-db> |
 | uri-js@4.4.1 | BSD-2-Clause | <https://github.com/garycourt/uri-js> |
 | util-deprecate@1.0.2 | MIT | <https://github.com/TooTallNate/util-deprecate> |
 | validate-npm-package-name@7.0.2 | ISC | <https://github.com/npm/validate-npm-package-name> |
-| vite@8.2.2 | MIT | <https://github.com/vitejs/vite> |
+| vite@8.3.4 | MIT | <https://github.com/vitejs/vite> |
 | vitest@4.1.11 | MIT | <https://github.com/vitest-dev/vitest> |
-| vscode-uri@3.1.0 | MIT | <https://github.com/microsoft/vscode-uri> |
-| vue-component-type-helpers@3.3.0 | MIT | <https://github.com/vuejs/language-tools> |
+| vscode-uri@3.2.0 | MIT | <https://github.com/microsoft/vscode-uri> |
+| vue-component-type-helpers@3.3.13 | MIT | <https://github.com/vuejs/language-tools> |
 | vue-eslint-parser@10.4.1 | MIT | <https://github.com/vuejs/vue-eslint-parser> |
 | vue-tsc@3.3.11 | MIT | <https://github.com/vuejs/language-tools> |
 | w3c-xmlserializer@5.0.0 | MIT | <https://github.com/jsdom/w3c-xmlserializer> |
@@ -546,14 +522,11 @@ not part of the production distribution.
 | which@6.0.1 | ISC | <https://github.com/npm/node-which> |
 | why-is-node-running@2.3.0 | MIT | <https://github.com/mafintosh/why-is-node-running> |
 | word-wrap@1.2.5 | MIT | <https://github.com/jonschlinkert/word-wrap> |
-| wrap-ansi@7.0.0 | MIT | <https://github.com/chalk/wrap-ansi> |
-| wrap-ansi@8.1.0 | MIT | <https://github.com/chalk/wrap-ansi> |
 | write-file-atomic@7.0.1 | ISC | <https://github.com/npm/write-file-atomic> |
 | xml-name-validator@5.0.0 | Apache-2.0 | <https://github.com/jsdom/xml-name-validator> |
 | xmlchars@2.2.0 | MIT | <https://github.com/lddubeau/xmlchars> |
 | yallist@4.0.0 | ISC | <https://github.com/isaacs/yallist> |
 | yallist@5.0.0 | BlueOak-1.0.0 | <https://github.com/isaacs/yallist> |
-| yaml@2.9.0 | ISC | <https://github.com/eemeli/yaml> |
 | yocto-queue@0.1.0 | MIT | <https://github.com/sindresorhus/yocto-queue> |
 
 # License texts for production dependencies
@@ -576,7 +549,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## Apache-2.0: pdfjs-dist@6.3.289
+## Apache-2.0: pdfjs-dist@6.4.299
 
 ```text
 Apache License
@@ -1326,7 +1299,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## BSD-3-Clause: source-map-js@1.2.1
+## BSD-3-Clause: source-map-js@1.2.2
 
 ```text
 Copyright (c) 2009-2011, Mozilla Foundation and contributors
@@ -1678,7 +1651,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## MIT: @babel/parser@7.29.8
+## MIT: @babel/parser@7.29.9
 
 ```text
 Copyright (C) 2012-2014 by various contributors (see AUTHORS)
@@ -1702,7 +1675,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## MIT: @jridgewell/sourcemap-codec@1.5.5
+## MIT: @jridgewell/sourcemap-codec@1.6.0
 
 ```text
 Copyright 2024 Justin Ridgewell <justin@ridgewell.name>
@@ -1740,15 +1713,15 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## MIT: @napi-rs/canvas-win32-x64-msvc@1.0.9
+## MIT: @napi-rs/canvas-linux-x64-gnu@1.0.11
 
 ```text
-# `@napi-rs/canvas-win32-x64-msvc`
+# `@napi-rs/canvas-linux-x64-gnu`
 
-This is the **x86_64-pc-windows-msvc** binary for `@napi-rs/canvas`
+This is the **x86_64-unknown-linux-gnu** binary for `@napi-rs/canvas`
 ```
 
-## MIT: @napi-rs/canvas@1.0.9
+## MIT: @napi-rs/canvas@1.0.11
 
 ```text
 MIT License
@@ -1774,7 +1747,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## MIT: @vue/compiler-core@3.5.41, @vue/compiler-dom@3.5.41, @vue/compiler-sfc@3.5.41, @vue/compiler-ssr@3.5.41, @vue/reactivity@3.5.41, @vue/runtime-core@3.5.41, @vue/runtime-dom@3.5.41, @vue/server-renderer@3.5.41, @vue/shared@3.5.41, vue@3.5.41
+## MIT: @vue/compiler-core@3.5.44, @vue/compiler-dom@3.5.44, @vue/compiler-sfc@3.5.44, @vue/compiler-ssr@3.5.44, @vue/reactivity@3.5.44, @vue/runtime-core@3.5.44, @vue/runtime-dom@3.5.44, @vue/server-renderer@3.5.44, @vue/shared@3.5.44, vue@3.5.44
 
 ```text
 The MIT License (MIT)
@@ -2091,7 +2064,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## MIT: nanoid@5.1.16
+## MIT: nanoid@6.0.2
 
 ```text
 The MIT License (MIT)
@@ -2142,7 +2115,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## MIT: postcss-js@4.0.1
+## MIT: postcss-js@4.1.0
 
 ```text
 The MIT License (MIT)
@@ -2167,7 +2140,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## MIT: postcss@8.5.26
+## MIT: postcss@8.5.30
 
 ```text
 The MIT License (MIT)

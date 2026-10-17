@@ -6,6 +6,37 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Credit-card statement imports: CSV uploads are now automatically detected as
+  credit-card statements (card-specific headers like "balance owed" or
+  "minimum payment due", card-number columns, Westpac `Data_export` split-column
+  exports identified via the short numeric card-ID account column plus a balance
+  column, filename hints, and row shape — mostly-positive amounts with a few
+  repayment rows). The label modal shows the detection with its reasons and a
+  toggle to confirm or override it.
+- Credit-card sign logic: in card mode purchases/fees/interest are recorded as
+  spending regardless of the sign the bank exported, repayments become income
+  under the "Transfers" category (so they never inflate income or spending),
+  and refunds/chargebacks stay income. Every card row is tagged
+  `credit card` so card activity stays separable in reports and filters.
+- Combined multi-account exports: when one CSV mixes accounts (e.g. a Westpac
+  export containing the card plus everyday and loan accounts), credit-card sign
+  logic applies per-row only to the detected card account(s); deposit and loan
+  rows keep normal bank-sign behaviour.
+
+### Fixed
+- Importing a credit-card statement no longer inverts every transaction
+  (purchases counted as income, repayments as spending).
+
+### Dependencies
+- Routine minor/patch upgrades across dev and runtime dependencies
+  (`npm update`). Tailwind 4, daisyUI 5, TypeScript 7, jsdom 30 and vitest 5
+  majors are deliberately held back (breaking changes); the remaining
+  `npm audit` highs are transitive through tailwindcss 3's build chain only.
+- `vue-tsc` pinned to 3.3.11: 3.3.12+ narrows template ref types from their
+  initial value, producing false TS2367 errors on the tab comparisons in
+  `App.vue`. Revisit when upstream fixes or documents the behaviour change.
+
 ### Security
 - Master password minimum length raised from 4 to 8 characters (NIST SP 800-63B
   minimum). Existing passwords keep working until changed.

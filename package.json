@@ -1,6 +1,6 @@
 {
   "name": "mybffpt",
-  "version": "2026.09.1",
+  "version": "2026.10.0",
   "private": false,
   "type": "module",
   "engines": {
@@ -68,7 +68,7 @@
     "vite": "^8.2.2",
     "vitest": "^4.1.6",
     "vue-eslint-parser": "^10.4.1",
-    "vue-tsc": "^3.3.11"
+    "vue-tsc": "3.3.11"
   },
   "overrides": {
     "nanoid": ">=3.3.18"
